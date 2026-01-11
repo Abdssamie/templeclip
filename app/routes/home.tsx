@@ -10,7 +10,6 @@ import {
   Plus,
   Minus,
   Scissors,
-  Bot,
   Save as SaveIcon,
   ChevronRight,
   ChevronLeft,
@@ -58,17 +57,9 @@ import {
   type ScrubberState,
 } from "~/components/timeline/types";
 import { useNavigate, useParams, useLocation } from "react-router";
-import { ChatBox } from "~/components/chat/ChatBox";
 import { KimuLogo } from "~/components/ui/KimuLogo";
 import { useAuth } from "~/hooks/useAuth";
 import { AuthOverlay } from "~/components/ui/AuthOverlay";
-
-interface Message {
-  id: string;
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
 
 export default function TimelineEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,10 +91,6 @@ export default function TimelineEditor() {
   useEffect(() => {
     setHeightInput(String(height));
   }, [height]);
-
-  const [isChatMinimized, setIsChatMinimized] = useState<boolean>(false);
-
-  const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [starCount, setStarCount] = useState<number | null>(null);
   // Avoid initial blank render; don't delay render on a 'mounted' gate
 
@@ -908,7 +895,7 @@ export default function TimelineEditor() {
           <ResizableHandle withHandle className={isSidebarCollapsed ? "opacity-0 pointer-events-none" : undefined} />
 
           {/* Center Area: Preview and Timeline */}
-          <ResizablePanel defaultSize={isChatMinimized ? 80 : 55}>
+          <ResizablePanel defaultSize={80}>
             <ResizablePanelGroup direction="vertical">
               {/* Preview Area */}
               <ResizablePanel defaultSize={65} minSize={40}>
@@ -973,20 +960,7 @@ export default function TimelineEditor() {
                         </Label>
                       </div>
 
-                      {!isChatMinimized && null}
-                      {isChatMinimized && (
-                        <>
-                          <Separator orientation="vertical" className="h-4 mx-1" />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsChatMinimized(false)}
-                            className="h-6 w-6 p-0 text-primary"
-                            title="Open Chat">
-                            <Bot className="h-3 w-3" />
-                          </Button>
-                        </>
-                      )}
+
                     </div>
                   </div>
 
@@ -1177,28 +1151,7 @@ export default function TimelineEditor() {
             </ResizablePanelGroup>
           </ResizablePanel>
 
-          {!isChatMinimized && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-                <div className="h-full border-l border-border">
-                  <ChatBox
-                    mediaBinItems={mediaBinItems}
-                    handleDropOnTrack={handleDropOnTrack}
-                    isMinimized={false}
-                    onToggleMinimize={() => setIsChatMinimized(true)}
-                    messages={chatMessages}
-                    onMessagesChange={setChatMessages}
-                    timelineState={timeline}
-                    handleUpdateScrubber={handleUpdateScrubberWithLocking}
-                    handleDeleteScrubber={handleDeleteScrubber}
-                    pixelsPerSecond={getPixelsPerSecond()}
-                    restoreTimeline={setTimelineFromServer}
-                  />
-                </div>
-              </ResizablePanel>
-            </>
-          )}
+
         </ResizablePanelGroup>
       </div>
 
