@@ -306,84 +306,91 @@ export function TimelineComposition({
       }
 
       // NOTE: groupped nested transitions are not supported yet. I'm too tired to implement it. idc. just dont use it. wtv.
-      // Process grouped scrubbers with transitions, then use stack approach for recursion
+      // Process grouped scrubbers - render all children in parallel within a single sequence
       if (scrubber.mediaType === "groupped_scrubber") {
-        // For grouped scrubbers, handle transitions between grouped items
         const groupedScrubbers = scrubber.groupped_scrubbers || [];
+
+        // Calculate the bounds of the group to determine total duration
+        const groupLeftmost = Math.min(...groupedScrubbers.map((s) => s.left));
+        const groupRightmost = Math.max(...groupedScrubbers.map((s) => s.left + s.width));
+        const groupDurationInFrames = Math.max(Math.round(((groupRightmost - groupLeftmost) / resolvedPixelsPerSecond) * FPS), 1);
+
+        // Collect all child sequences to render in parallel
+        const parallelSequences: React.ReactNode[] = [];
 
         for (let j = 0; j < groupedScrubbers.length; j++) {
           const grouppedScrubber = groupedScrubbers[j];
 
-          // Add left transition for the first grouped scrubber
-          if (j === 0 && grouppedScrubber.left_transition_id && allTransitions[grouppedScrubber.left_transition_id]) {
-            const transition = allTransitions[grouppedScrubber.left_transition_id];
-            transitionSeriesElements.push(
-              <TransitionSeries.Transition
-                key={`grouped-${grouppedScrubber.id}-left-transition`}
-                // @ts-expect-error - NOTE: typescript is being stoopid. The fix is nasty so let it be. it is not an error.
-                presentation={getTransitionPresentation(transition)}
-                timing={getTransitionTiming(transition)}
-              />
-            );
-          }
+          // Calculate relative timing within the group
+          const relativeStartFrame = Math.round(((grouppedScrubber.left - groupLeftmost) / resolvedPixelsPerSecond) * FPS);
+          const childDurationInFrames = Math.max(Math.round((grouppedScrubber.width / resolvedPixelsPerSecond) * FPS), 1);
 
-          // Use stack approach for each grouped scrubber to handle potential nesting
+          // Use stack approach to handle potential nesting
           const scrubberStack: Array<{
             scrubber: TimelineDataItem['scrubbers'][0] | ScrubberState;
             keyPrefix: string;
-            durationCalculation: () => number;
+            from: number;
+            duration: number;
           }> = [];
 
           scrubberStack.push({
             scrubber: grouppedScrubber,
             keyPrefix: `grouped-${grouppedScrubber.id}`,
-            durationCalculation: () => Math.max(Math.round((grouppedScrubber.width / resolvedPixelsPerSecond) * FPS), 1)
+            from: relativeStartFrame,
+            duration: childDurationInFrames,
           });
 
           // Process the stack for this grouped scrubber
           while (scrubberStack.length > 0) {
             const stackItem = scrubberStack.pop()!;
-            const { scrubber: currentScrubber, keyPrefix, durationCalculation } = stackItem;
+            const { scrubber: currentScrubber, keyPrefix, from, duration } = stackItem;
 
             if (currentScrubber.mediaType === "groupped_scrubber") {
-              // Add nested grouped scrubbers to the stack in reverse order
-              for (let k = (currentScrubber.groupped_scrubbers || []).length - 1; k >= 0; k--) {
-                const nestedScrubber = (currentScrubber.groupped_scrubbers || [])[k];
+              // For nested groups, calculate their bounds and add children
+              const nestedScrubbers = currentScrubber.groupped_scrubbers || [];
+              const nestedLeftmost = Math.min(...nestedScrubbers.map((s) => s.left));
+
+              for (let k = nestedScrubbers.length - 1; k >= 0; k--) {
+                const nestedScrubber = nestedScrubbers[k];
+                const nestedRelativeStart = Math.round(((nestedScrubber.left - nestedLeftmost) / resolvedPixelsPerSecond) * FPS);
+                const nestedDuration = Math.max(Math.round((nestedScrubber.width / resolvedPixelsPerSecond) * FPS), 1);
+
                 scrubberStack.push({
                   scrubber: nestedScrubber,
                   keyPrefix: `${keyPrefix}-nested-${nestedScrubber.id}`,
-                  durationCalculation: () => Math.max(Math.round((nestedScrubber.width / resolvedPixelsPerSecond) * FPS), 1)
+                  from: from + nestedRelativeStart,
+                  duration: nestedDuration,
                 });
               }
             } else {
               // Create media content for non-grouped scrubber
               const mediaContent = createMediaContent(currentScrubber);
               if (mediaContent) {
-                transitionSeriesElements.push(
-                  <TransitionSeries.Sequence
+                parallelSequences.push(
+                  <Sequence
                     key={keyPrefix}
-                    durationInFrames={durationCalculation()}
+                    from={from}
+                    durationInFrames={duration}
                   >
                     {mediaContent}
-                  </TransitionSeries.Sequence>
+                  </Sequence>
                 );
               }
             }
           }
-
-          // Add right transition between grouped scrubbers or at the end
-          if (grouppedScrubber.right_transition_id && allTransitions[grouppedScrubber.right_transition_id]) {
-            const transition = allTransitions[grouppedScrubber.right_transition_id];
-            transitionSeriesElements.push(
-              <TransitionSeries.Transition
-                key={`grouped-${grouppedScrubber.id}-right-transition`}
-                // @ts-expect-error - NOTE: typescript is being stoopid. The fix is nasty so let it be. it is not an error.
-                presentation={getTransitionPresentation(transition)}
-                timing={getTransitionTiming(transition)}
-              />
-            );
-          }
         }
+
+        // Wrap all parallel sequences in a single TransitionSeries.Sequence
+        transitionSeriesElements.push(
+          <TransitionSeries.Sequence
+            key={`group-${scrubber.id}`}
+            durationInFrames={groupDurationInFrames}
+          >
+            <AbsoluteFill>
+              {parallelSequences}
+            </AbsoluteFill>
+          </TransitionSeries.Sequence>
+        );
       } else {
         // Process regular scrubbers using the stack approach
         const scrubberStack: Array<{

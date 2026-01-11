@@ -19,6 +19,8 @@ import {
   BetweenVerticalEnd,
   CornerUpLeft,
   CornerUpRight,
+  Group,
+  Ungroup,
 } from "lucide-react";
 
 // Custom video controls
@@ -1104,6 +1106,30 @@ export default function TimelineEditor() {
                         <Scissors className="h-3 w-3 mr-1" />
                         Split
                       </Button>
+                      <Separator orientation="vertical" className="h-4 mx-1" />
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleGroupSelected}
+                        disabled={selectedScrubberIds.length < 2}
+                        className="h-6 px-2 text-xs"
+                        title="Group selected items (Ctrl+Click to select multiple)">
+                        <Group className="h-3 w-3 mr-1" />
+                        Group
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => selectedScrubberIds.length === 1 && handleUngroupSelected(selectedScrubberIds[0])}
+                        disabled={selectedScrubberIds.length !== 1} // Ideally check if it's a group, but this is safe enough for now (handler checks)
+                        className="h-6 px-2 text-xs"
+                        title="Ungroup selected item">
+                        <Ungroup className="h-3 w-3 mr-1" />
+                        Ungroup
+                      </Button>
+
                       <Separator orientation="vertical" className="h-4 mx-1" />
                       <Button variant="ghost" size="sm" onClick={handleLogTimelineData} className="h-6 px-2 text-xs">
                         <Settings className="h-3 w-3 mr-1" />
