@@ -15,6 +15,7 @@ export interface BaseScrubber {
   // for a middle transition, you will only see its information in the left scrubber.
   left_transition_id: string | null; // only use this for the first scrubber intro
   right_transition_id: string | null; // this is what you use everywhere
+  variableName?: string | null;
 }
 
 export interface Transition {
@@ -73,9 +74,17 @@ export interface TrackState {
   transitions: Transition[]; // Transitions between scrubbers on this track
 }
 
+export interface TemplateVariable {
+  id: string;
+  name: string;
+  type: "text" | "image" | "video" | "audio";
+  defaultValue?: string;
+}
+
 // state of the timeline
 export interface TimelineState {
   tracks: TrackState[];
+  variables?: TemplateVariable[];
 }
 
 // the most important type. gets converted to json and gets rendered. Everything else is just a helper type. (formed using getTimelineData() in useTimeline.ts from timelinestate)

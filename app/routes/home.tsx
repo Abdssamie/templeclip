@@ -10,9 +10,7 @@ import {
   Plus,
   Minus,
   Scissors,
-  Star,
   Bot,
-  LogOut,
   Save as SaveIcon,
   ChevronRight,
   ChevronLeft,
@@ -743,6 +741,7 @@ export default function TimelineEditor() {
   }, [handleZoomIn, handleZoomOut]);
 
   const { user, isLoading: isAuthLoading, isSigningIn, signInWithGoogle, signOut } = useAuth();
+  console.log(user, isAuthLoading);
 
   return (
     <div

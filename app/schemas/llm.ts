@@ -19,7 +19,7 @@ export const optString = opt(z.string());
 
 export const FunctionCallSchema = z.object({
   function_name: z.string(),
-  arguments: z.record(z.unknown()).default({}),
+  arguments: z.record(z.string(), z.unknown()).default({}),
 });
 
 export const AiResponseSchema = z.object({

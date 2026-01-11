@@ -13,19 +13,23 @@ export const BetterAuthUserSchema = z.object({
   userId: z.union([z.string(), z.number()]).optional(),
   email: z.string().optional(),
   name: z.string().optional(),
-  image: z.string().optional(),
-  avatarUrl: z.string().optional(),
+  image: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
 });
 
 export const BetterAuthEnvelopeSchema = z.object({
   user: BetterAuthUserSchema.optional(),
-  data: z.object({ user: BetterAuthUserSchema.optional() }).optional(),
+  data: z.object({
+    user: BetterAuthUserSchema.optional(),
+    session: z.any().optional(),
+  }).optional(),
   session: z
     .object({
       user: BetterAuthUserSchema.optional(),
       userId: z.union([z.string(), z.number()]).optional(),
     })
     .optional(),
+  error: z.any().optional(),
 });
 
 export function normalizeAuthUser(input: unknown): z.infer<typeof AuthUserSchema> | null {

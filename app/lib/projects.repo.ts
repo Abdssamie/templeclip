@@ -14,13 +14,8 @@ function getPool(): Pool {
     } catch {
       throw new Error("Invalid database URL");
     }
-    pool = new Pool({ 
-      connectionString, 
-      ssl: connectionString.includes('supabase.co') 
-        ? { rejectUnauthorized: false } // Supabase uses certificates that may not be trusted by Node.js
-        : process.env.NODE_ENV === "production" 
-          ? { rejectUnauthorized: true }
-          : { rejectUnauthorized: false }
+    pool = new Pool({
+      connectionString
     });
   }
   return pool;

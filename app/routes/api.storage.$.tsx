@@ -68,10 +68,7 @@ export async function loader({ request }: { request: Request }) {
       console.error("Invalid database URL");
     }
     const pool = new Pool({
-      connectionString,
-      ssl: process.env.NODE_ENV === "production" 
-        ? { rejectUnauthorized: true }
-        : { rejectUnauthorized: false }, // Only disable in development
+      connectionString
     });
 
     let usedBytes = 0;
@@ -87,7 +84,7 @@ export async function loader({ request }: { request: Request }) {
         if (!Number.isFinite(usedBytes) || usedBytes < 0) usedBytes = 0;
       }
     } finally {
-      await pool.end().catch(() => {});
+      await pool.end().catch(() => { });
     }
 
     const limitBytes = 2 * 1024 * 1024 * 1024; // 2GB default

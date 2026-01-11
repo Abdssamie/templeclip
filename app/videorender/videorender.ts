@@ -271,6 +271,7 @@ app.post("/render", async (req, res) => {
       compositionWidth: req.body.compositionWidth,
       compositionHeight: req.body.compositionHeight,
       getPixelsPerSecond: req.body.getPixelsPerSecond,
+      variableValues: req.body.variableValues,
       isRendering: true,
     };
 

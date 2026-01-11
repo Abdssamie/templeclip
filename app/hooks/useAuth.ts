@@ -48,6 +48,8 @@ interface UseAuthResult {
   isLoading: boolean;
   isSigningIn: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<{ error?: { message: string } | null } | void>;
+  signUpWithEmail: (email: string, password: string, name: string) => Promise<{ error?: { message: string } | null } | void>;
   signOut: () => Promise<void>;
 }
 
@@ -56,6 +58,55 @@ export function useAuth(): UseAuthResult {
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const navigate = useNavigate();
+
+  const signInWithEmail = async (email: string, password: string) => {
+    setIsSigningIn(true);
+    try {
+      console.log("🔐 Starting Email sign-in...");
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: "/projects",
+      });
+
+      if (result.error) {
+        console.error("❌ Sign in failed:", result.error.message);
+        return { error: { message: result.error.message || "Sign in failed" } };
+      }
+      return;
+    } catch (error) {
+      console.error("❌ Sign in error:", error);
+      return { error: { message: "An unexpected error occurred" } };
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string, name: string) => {
+    setIsSigningIn(true);
+    try {
+      console.log("🔐 Starting Email sign-up...");
+      const result = await authClient.signUp.email({
+        email,
+        password,
+        name,
+        callbackURL: "/projects",
+      });
+
+      if (result.error) {
+        console.error("❌ Sign up failed:", result.error.message);
+        return { error: { message: result.error.message || "Sign up failed" } };
+      }
+      return;
+    } catch (error) {
+      console.error("❌ Sign up error:", error);
+      return { error: { message: "An unexpected error occurred" } };
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  // ... (existing useEffect)
 
   useEffect(() => {
     let isMounted = true;
@@ -76,13 +127,8 @@ export function useAuth(): UseAuthResult {
             Accept: "application/json",
           },
         });
-        console.log("fetchRestSession");
-        console.log("🔍 Fetching session from:", sessionUrl);
-        console.log("🔍 API response status:", res.status);
-        console.log("🔍 API response:", res);
         if (res.ok) {
           const json = await res.json();
-          console.log("🔍 API response JSON:", json);
           return extractUser(json);
         }
         if (res.status === 404) return null;
@@ -121,12 +167,7 @@ export function useAuth(): UseAuthResult {
     const urlParams = new URLSearchParams(window.location.search);
     const hasOAuthParams = urlParams.has("code") || urlParams.has("state") || urlParams.has("error");
 
-    console.log("🔍 Current URL:", window.location.href);
-    console.log("🔍 URL params:", Object.fromEntries(urlParams.entries()));
-    console.log("🔍 Has OAuth params:", hasOAuthParams);
-
     if (hasOAuthParams) {
-      console.log("🔄 OAuth callback detected, processing...");
       let attempts = 0;
       const checkWithRetry = async () => {
         attempts++;
@@ -145,26 +186,22 @@ export function useAuth(): UseAuthResult {
           url.searchParams.delete("code");
           url.searchParams.delete("state");
           url.searchParams.delete("error");
-          console.log("🧹 Cleaning up URL:", url.toString());
           window.history.replaceState({}, "", url.pathname + url.search + url.hash);
         }
       }, 5000);
       initialCheck();
     } else {
-      console.log("🔍 No OAuth params, doing regular session check");
       initialCheck();
     }
 
     // Listen for auth state changes (when returning from OAuth)
     const handleFocus = () => {
       if (!isMounted) return;
-      console.log("🔍 Window focused, checking session...");
       Promise.all([fetchRestSession(), fetchClientSession()]).then(([a, b]) => reconcileAndSet(a, b));
     };
 
     const handleVisibilityChange = () => {
       if (!isMounted || document.hidden) return;
-      console.log("🔍 Page became visible, checking session...");
       setTimeout(() => {
         Promise.all([fetchRestSession(), fetchClientSession()]).then(([a, b]) => reconcileAndSet(a, b));
       }, 150);
@@ -278,5 +315,5 @@ export function useAuth(): UseAuthResult {
     }
   };
 
-  return { user, isLoading, isSigningIn, signInWithGoogle, signOut };
+  return { user, isLoading, isSigningIn, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut };
 }

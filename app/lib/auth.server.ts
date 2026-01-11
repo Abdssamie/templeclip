@@ -52,11 +52,11 @@ export const auth = betterAuth({
   // Let Better Auth auto-detect baseURL from the request
   database: new Pool({
     connectionString,
-    ssl: connectionString.includes("supabase.co")
-      ? { rejectUnauthorized: false } // Supabase uses certificates that may not be trusted by Node.js
-      : process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: true }
-        : { rejectUnauthorized: false },
+    // ssl: connectionString.includes("supabase.co")
+    // ? { rejectUnauthorized: false } // Supabase uses certificates that may not be trusted by Node.js
+    //  : process.env.NODE_ENV === "production"
+    //    ? { rejectUnauthorized: true }
+    //    : { rejectUnauthorized: false },
   }),
 
   // Add debugging and callback configuration
@@ -68,9 +68,13 @@ export const auth = betterAuth({
     google: {
       clientId: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      // Let Better Auth use its default callback endpoint
-      // redirectURI will be automatically set to: {baseURL}/api/auth/callback/google
+      redirectURI: process.env.NODE_ENV === "development"
+        ? "http://localhost:5173/api/auth/callback/google"
+        : undefined, // Let it auto-detect in prod
     },
+  },
+  emailAndPassword: {
+    enabled: true,
   },
   session: {
     // Increase session expiry

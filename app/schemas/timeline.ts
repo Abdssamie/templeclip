@@ -30,6 +30,7 @@ export const MediaBinBaseSchema = z.object({
   groupped_scrubbers: z.any().nullable(),
   left_transition_id: z.string().nullable(),
   right_transition_id: z.string().nullable(),
+  variableName: z.string().nullable().optional(),
 });
 
 export const MediaBinItemSchema = MediaBinBaseSchema.extend({
@@ -59,8 +60,16 @@ export const TrackStateSchema = z.object({
   transitions: z.array(TransitionSchema),
 });
 
+export const TemplateVariableSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["text", "image", "video", "audio"]),
+  defaultValue: z.string().optional(),
+});
+
 export const TimelineStateSchema = z.object({
   tracks: z.array(TrackStateSchema),
+  variables: z.array(TemplateVariableSchema).optional(),
 });
 
 export type TimelineStateParsed = z.infer<typeof TimelineStateSchema>;

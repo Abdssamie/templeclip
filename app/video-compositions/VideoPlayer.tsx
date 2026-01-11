@@ -30,6 +30,7 @@ type TimelineCompositionProps = {
   timeline: TimelineState;
   handleUpdateScrubber: (updateScrubber: ScrubberState) => void;
   getPixelsPerSecond: number | (() => number);
+  variableValues?: Record<string, string>;
 };
 
 // props for the preview mode player
@@ -44,6 +45,7 @@ export type VideoPlayerProps = {
   selectedItem: string | null;
   setSelectedItem: React.Dispatch<React.SetStateAction<string | null>>;
   getPixelsPerSecond: number | (() => number);
+  variableValues?: Record<string, string>;
 };
 
 export function TimelineComposition({
@@ -54,6 +56,7 @@ export function TimelineComposition({
   timeline,
   handleUpdateScrubber,
   getPixelsPerSecond,
+  variableValues,
 }: TimelineCompositionProps) {
   // Resolve pixels per second based on rendering mode
   const resolvedPixelsPerSecond = isRendering
@@ -61,6 +64,14 @@ export function TimelineComposition({
     : (getPixelsPerSecond as () => number)();
   // Get all transitions from timelineData
   const allTransitions = timelineData[0].transitions;
+
+  // Helper to resolve variables
+  const resolveVariable = (value: string | null, variableName?: string | null) => {
+    if (variableName && variableValues && variableValues[variableName]) {
+      return variableValues[variableName];
+    }
+    return value;
+  };
 
   // Step 1: Group scrubbers by trackIndex
   const trackGroups: {
@@ -124,16 +135,17 @@ export function TimelineComposition({
                   padding: "20px",
                 }}
               >
-                {scrubber.text?.textContent || ""}
+                {resolveVariable(scrubber.text?.textContent || "", scrubber.variableName)}
               </p>
             </div>
           </AbsoluteFill>
         );
         break;
       case "image": {
-        const imageUrl = isRendering
+        const rawUrl = isRendering
           ? scrubber.mediaUrlRemote || scrubber.mediaUrlLocal
           : scrubber.mediaUrlLocal || scrubber.mediaUrlRemote;
+        const imageUrl = resolveVariable(rawUrl, scrubber.variableName);
         content = (
           <AbsoluteFill
             style={{
@@ -149,9 +161,10 @@ export function TimelineComposition({
         break;
       }
       case "video": {
-        const videoUrl = isRendering
+        const rawUrl = isRendering
           ? scrubber.mediaUrlRemote || scrubber.mediaUrlLocal
           : scrubber.mediaUrlLocal || scrubber.mediaUrlRemote;
+        const videoUrl = resolveVariable(rawUrl, scrubber.variableName);
         content = (
           <AbsoluteFill
             style={{
@@ -171,15 +184,25 @@ export function TimelineComposition({
         break;
       }
       case "audio": {
-        const audioUrl = isRendering
+        const rawUrl = isRendering
           ? scrubber.mediaUrlRemote || scrubber.mediaUrlLocal
           : scrubber.mediaUrlLocal || scrubber.mediaUrlRemote;
+        const audioUrl = resolveVariable(rawUrl, scrubber.variableName);
         content = (
-          <Audio
-            src={audioUrl!}
-            trimBefore={scrubber.trimBefore || undefined}
-            trimAfter={scrubber.trimAfter || undefined}
-          />
+          <AbsoluteFill
+            style={{
+              left: scrubber.left_player,
+              top: scrubber.top_player,
+              width: scrubber.width_player,
+              height: scrubber.height_player,
+            }}
+          >
+            <Audio
+              src={audioUrl!}
+              trimBefore={scrubber.trimBefore || undefined}
+              trimAfter={scrubber.trimAfter || undefined}
+            />
+          </AbsoluteFill>
         );
         break;
       }
@@ -477,6 +500,7 @@ export function VideoPlayer({
   selectedItem,
   setSelectedItem,
   getPixelsPerSecond,
+  variableValues,
 }: VideoPlayerProps) {
   // Calculate composition width if not provided
   if (compositionWidth === null) {
@@ -527,6 +551,7 @@ export function VideoPlayer({
         timeline,
         handleUpdateScrubber,
         getPixelsPerSecond,
+        variableValues,
       }}
       durationInFrames={safeDuration}
       compositionWidth={safeWidth}

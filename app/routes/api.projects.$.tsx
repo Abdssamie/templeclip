@@ -193,8 +193,7 @@ export async function action({ request }: { request: Request }) {
       console.error("Invalid database URL");
     }
     const pool = new Pool({
-      connectionString,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: true } : { rejectUnauthorized: false }, // Only disable in development
+      connectionString
     });
     try {
       if (name) {
