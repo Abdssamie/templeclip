@@ -65,11 +65,22 @@ export function TimelineComposition({
   // Get all transitions from timelineData
   const allTransitions = timelineData[0].transitions;
 
-  // Helper to resolve variables
+  // Helper to resolve variables - supports both variableName field and {{ varName }} syntax in content
   const resolveVariable = (value: string | null, variableName?: string | null) => {
+    // First check if variableName field is set
     if (variableName && variableValues && variableValues[variableName]) {
       return variableValues[variableName];
     }
+
+    // Then check for {{ varName }} pattern in the value itself
+    if (value && variableValues) {
+      // Replace all {{ variableName }} patterns with their values
+      const resolved = value.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, varName) => {
+        return variableValues[varName] || match; // Keep original if no value set
+      });
+      return resolved;
+    }
+
     return value;
   };
 
@@ -302,7 +313,7 @@ export function TimelineComposition({
 
         for (let j = 0; j < groupedScrubbers.length; j++) {
           const grouppedScrubber = groupedScrubbers[j];
-          
+
           // Add left transition for the first grouped scrubber
           if (j === 0 && grouppedScrubber.left_transition_id && allTransitions[grouppedScrubber.left_transition_id]) {
             const transition = allTransitions[grouppedScrubber.left_transition_id];

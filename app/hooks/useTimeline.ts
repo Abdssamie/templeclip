@@ -1515,6 +1515,47 @@ export const useTimeline = () => {
     [getAllScrubbers, getPixelsPerSecond],
   );
 
+  // Variable management functions
+  const assignVariableToScrubber = useCallback(
+    (scrubberId: string, variableName: string | null) => {
+      snapshotTimeline();
+      setTimeline((prev) => ({
+        ...prev,
+        tracks: prev.tracks.map((track) => ({
+          ...track,
+          scrubbers: track.scrubbers.map((scrubber) =>
+            scrubber.id === scrubberId
+              ? { ...scrubber, variableName: variableName || null }
+              : scrubber
+          ),
+        })),
+      }));
+      if (variableName) {
+        toast.success(`Variable "${variableName}" assigned`);
+      } else {
+        toast.success("Variable removed");
+      }
+    },
+    [snapshotTimeline],
+  );
+
+  const getVariablesFromTimeline = useCallback(() => {
+    const variables: { name: string; type: string; scrubberId: string; mediaType: string }[] = [];
+    for (const track of timeline.tracks) {
+      for (const scrubber of track.scrubbers) {
+        if (scrubber.variableName) {
+          variables.push({
+            name: scrubber.variableName,
+            type: scrubber.mediaType,
+            scrubberId: scrubber.id,
+            mediaType: scrubber.mediaType,
+          });
+        }
+      }
+    }
+    return variables;
+  }, [timeline]);
+
   return {
     timeline,
     timelineWidth,
@@ -1550,5 +1591,8 @@ export const useTimeline = () => {
     canUndo,
     canRedo,
     snapshotTimeline,
+    // Variable management
+    assignVariableToScrubber,
+    getVariablesFromTimeline,
   };
 };

@@ -110,6 +110,9 @@ export default function TimelineEditor() {
   // video player media selection state
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
+  // Variable values state for preview/rendering
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+
   const {
     timeline,
     timelineWidth,
@@ -144,6 +147,9 @@ export default function TimelineEditor() {
     canUndo,
     canRedo,
     snapshotTimeline,
+    // Variable management
+    assignVariableToScrubber,
+    getVariablesFromTimeline,
   } = useTimeline();
 
   const {
@@ -815,11 +821,10 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${
-                location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
-                  ? "bg-background text-primary"
-                  : "text-muted-foreground"
-              }`}
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
+                ? "bg-background text-primary"
+                : "text-muted-foreground"
+                }`}
               onClick={() => openSection("media-bin")}
               title="Media Bin">
               <File className="h-5 w-5" />
@@ -827,9 +832,8 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${
-                location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
-              }`}
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
+                }`}
               onClick={() => openSection("text-editor")}
               title="Text Editor">
               <Type className="h-5 w-5" />
@@ -837,9 +841,8 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${
-                location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
-              }`}
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
+                }`}
               onClick={() => openSection("transitions")}
               title="Transitions">
               <BetweenVerticalEnd className="h-5 w-5" />
@@ -890,6 +893,11 @@ export default function TimelineEditor() {
                 sortBy={mediaSortBy}
                 onArrangeModeChange={setMediaArrangeMode}
                 onSortByChange={setMediaSortBy}
+                // Variable management
+                variableValues={variableValues}
+                onVariableValueChange={(name, value) => setVariableValues(prev => ({ ...prev, [name]: value }))}
+                allScrubbers={getAllScrubbers().map(s => ({ id: s.id, variableName: s.variableName, mediaType: s.mediaType }))}
+                onAssignVariable={assignVariableToScrubber}
               />
             </div>
           </ResizablePanel>
@@ -998,6 +1006,7 @@ export default function TimelineEditor() {
                         selectedItem={selectedItem}
                         setSelectedItem={setSelectedItem}
                         getPixelsPerSecond={getPixelsPerSecond}
+                        variableValues={variableValues}
                       />
                     </div>
 
@@ -1135,6 +1144,7 @@ export default function TimelineEditor() {
                     onUngroupScrubber={handleUngroupSelected}
                     onMoveToMediaBin={handleMoveToMediaBinSelected}
                     onBeginScrubberTransform={snapshotTimeline}
+                    onAssignVariable={assignVariableToScrubber}
                   />
                 </div>
               </ResizablePanel>

@@ -36,6 +36,7 @@ interface TimelineTracksProps {
   onGroupScrubbers: () => void;
   onUngroupScrubber: (scrubberId: string) => void;
   onMoveToMediaBin?: (scrubberId: string) => void;
+  onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
 }
 
 export const TimelineTracks: React.FC<TimelineTracksProps> = ({
@@ -60,6 +61,7 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
   onGroupScrubbers,
   onUngroupScrubber,
   onMoveToMediaBin,
+  onAssignVariable,
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -129,9 +131,8 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
       {/* Scrollable Tracks Area */}
       <div
         ref={containerRef}
-        className={`relative flex-1 bg-timeline-background timeline-scrollbar ${
-          timeline.tracks.length === 0 ? "overflow-hidden" : "overflow-auto"
-        }`}
+        className={`relative flex-1 bg-timeline-background timeline-scrollbar ${timeline.tracks.length === 0 ? "overflow-hidden" : "overflow-auto"
+          }`}
         onScroll={timeline.tracks.length > 0 ? onScroll : undefined}>
         {timeline.tracks.length === 0 ? (
           /* Empty state - non-scrollable and centered */
@@ -212,11 +213,10 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                 <div key={track.id} className="relative" style={{ height: `${DEFAULT_TRACK_HEIGHT}px` }}>
                   {/* Track background */}
                   <div
-                    className={`absolute w-full border-b border-border/30 transition-colors ${
-                      trackIndex % 2 === 0
+                    className={`absolute w-full border-b border-border/30 transition-colors ${trackIndex % 2 === 0
                         ? "bg-timeline-track hover:bg-timeline-track/80"
                         : "bg-timeline-background hover:bg-muted/20"
-                    }`}
+                      }`}
                     style={{
                       top: `0px`,
                       height: `${DEFAULT_TRACK_HEIGHT}px`,
@@ -283,6 +283,7 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                     trackCount={timeline.tracks.length}
                     pixelsPerSecond={pixelsPerSecond}
                     onBeginTransform={onBeginScrubberTransform}
+                    onAssignVariable={onAssignVariable}
                   />
                 );
               })}

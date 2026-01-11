@@ -32,6 +32,11 @@ interface LeftPanelProps {
   sortBy?: "default" | "name_asc" | "name_desc";
   onArrangeModeChange?: (mode: "default" | "group") => void;
   onSortByChange?: (sort: "default" | "name_asc" | "name_desc") => void;
+  // Variable management
+  variableValues?: Record<string, string>;
+  onVariableValueChange?: (variableName: string, value: string) => void;
+  allScrubbers?: { id: string; variableName?: string | null; mediaType: string }[];
+  onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
 }
 
 export default function LeftPanel({
@@ -49,6 +54,11 @@ export default function LeftPanel({
   sortBy,
   onArrangeModeChange,
   onSortByChange,
+  // Variable management
+  variableValues,
+  onVariableValueChange,
+  allScrubbers,
+  onAssignVariable,
 }: LeftPanelProps) {
   const location = useLocation();
 
@@ -115,6 +125,11 @@ export default function LeftPanel({
               sortByExternal: sortBy,
               onArrangeModeChange,
               onSortByChange,
+              // Variable management
+              variableValues,
+              onVariableValueChange,
+              allScrubbers,
+              onAssignVariable,
             }}
           />
         </div>

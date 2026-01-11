@@ -18,6 +18,8 @@ import {
   Pause,
   Volume2,
   VolumeX,
+  Variable,
+  Braces,
 } from "lucide-react";
 import { Thumbnail } from "@remotion/player";
 import { OffthreadVideo, Img, Video } from "remotion";
@@ -103,7 +105,7 @@ const AudioPreview = ({ src }: { src: string }) => {
     const el = audioRef.current;
     if (!el) return;
     if (el.paused) {
-      el.play().catch(() => {});
+      el.play().catch(() => { });
     } else {
       el.pause();
     }
@@ -231,7 +233,17 @@ export default function MediaBin() {
     sortByExternal,
     onArrangeModeChange,
     onSortByChange,
-  } = useOutletContext<MediaBinProps>();
+    // Variable management
+    variableValues,
+    onVariableValueChange,
+    allScrubbers,
+    onAssignVariable,
+  } = useOutletContext<MediaBinProps & {
+    variableValues?: Record<string, string>;
+    onVariableValueChange?: (name: string, value: string) => void;
+    allScrubbers?: { id: string; variableName?: string | null; mediaType: string }[];
+    onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
+  }>();
 
   // Drag & Drop state for external file imports
   const [isDragOver, setIsDragOver] = useState(false);
@@ -488,9 +500,8 @@ export default function MediaBin() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-5 w-5 p-0 bg-transparent hover:bg-transparent ${
-                  arrangeMode === "default" ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
-                }`}
+                className={`h-5 w-5 p-0 bg-transparent hover:bg-transparent ${arrangeMode === "default" ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                  }`}
                 onClick={() => updateArrangeMode("default")}
                 title="Default order"
                 aria-pressed={arrangeMode === "default"}>
@@ -499,9 +510,8 @@ export default function MediaBin() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-5 w-5 p-0 bg-transparent hover:bg-transparent ${
-                  arrangeMode === "group" ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
-                }`}
+                className={`h-5 w-5 p-0 bg-transparent hover:bg-transparent ${arrangeMode === "group" ? "text-primary" : "text-muted-foreground/70 hover:text-foreground"
+                  }`}
                 onClick={() => updateArrangeMode("group")}
                 title="Smart Group"
                 aria-pressed={arrangeMode === "group"}>
@@ -549,6 +559,80 @@ export default function MediaBin() {
         </div>
       </div>
 
+      {/* Variables Panel - Shows variables detected from {{ varName }} patterns in text scrubbers */}
+      {(() => {
+        // Extract all variables from text content using {{ varName }} pattern
+        const extractedVariables: { name: string; scrubberId: string; mediaType: string }[] = [];
+        const seenNames = new Set<string>();
+
+        // Check scrubbers passed from timeline
+        if (allScrubbers) {
+          for (const scrubber of allScrubbers) {
+            // Check variableName field
+            if (scrubber.variableName && !seenNames.has(scrubber.variableName)) {
+              seenNames.add(scrubber.variableName);
+              extractedVariables.push({
+                name: scrubber.variableName,
+                scrubberId: scrubber.id,
+                mediaType: scrubber.mediaType,
+              });
+            }
+          }
+        }
+
+        // Also check mediaBinItems for text content with {{ varName }} patterns
+        for (const item of mediaBinItems) {
+          if (item.mediaType === "text" && item.text?.textContent) {
+            const matches = item.text.textContent.matchAll(/\{\{\s*(\w+)\s*\}\}/g);
+            for (const match of matches) {
+              const varName = match[1];
+              if (!seenNames.has(varName)) {
+                seenNames.add(varName);
+                extractedVariables.push({
+                  name: varName,
+                  scrubberId: item.id,
+                  mediaType: "text",
+                });
+              }
+            }
+          }
+        }
+
+        if (extractedVariables.length === 0) return null;
+
+        return (
+          <div className="border-b border-border/50 bg-muted/20">
+            <div className="px-2 py-1.5">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Variable className="h-3 w-3 text-purple-500" />
+                <span className="text-[11px] font-medium text-muted-foreground">Variables</span>
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-mono bg-purple-500/10 text-purple-500">
+                  {extractedVariables.length}
+                </Badge>
+              </div>
+              <div className="space-y-1.5">
+                {extractedVariables.map(variable => (
+                  <div key={variable.name} className="flex items-center gap-2 p-1.5 rounded bg-background/50 border border-border/30">
+                    <Badge variant="outline" className="text-[10px] px-1.5 bg-purple-500/10 text-purple-500 border-purple-500/30 shrink-0">
+                      <Braces className="h-2.5 w-2.5 mr-1" />
+                      {variable.name}
+                    </Badge>
+                    {variable.mediaType === 'text' && <input
+                      type="text"
+                      placeholder="Enter value..."
+                      className="flex-1 text-xs bg-transparent border-none outline-none placeholder:text-muted-foreground/50 min-w-0"
+                      value={variableValues?.[variable.name] || ""}
+                      onChange={(e) => onVariableValueChange?.(variable.name, e.target.value)}
+                    />}
+                    <span className="text-[10px] text-muted-foreground/60 shrink-0">{variable.mediaType}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Media Items */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1 panel-scrollbar">
         {isMediaLoading && (
@@ -561,9 +645,8 @@ export default function MediaBin() {
             {defaultArrangedItems.map((item) => (
               <div
                 key={item.id}
-                className={`group p-2 border border-border/50 rounded-md transition-colors ${
-                  item.isUploading ? "bg-accent/30 cursor-default" : "bg-card cursor-grab hover:bg-accent/50"
-                }`}
+                className={`group p-2 border border-border/50 rounded-md transition-colors ${item.isUploading ? "bg-accent/30 cursor-default" : "bg-card cursor-grab hover:bg-accent/50"
+                  }`}
                 draggable={!item.isUploading}
                 onDragStart={(e) => {
                   if (!item.isUploading) {
@@ -579,11 +662,10 @@ export default function MediaBin() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p
-                        className={`text-xs font-medium truncate transition-colors ${
-                          item.isUploading
-                            ? "text-muted-foreground"
-                            : "text-foreground group-hover:text-accent-foreground"
-                        }`}>
+                        className={`text-xs font-medium truncate transition-colors ${item.isUploading
+                          ? "text-muted-foreground"
+                          : "text-foreground group-hover:text-accent-foreground"
+                          }`}>
                         {item.name}
                       </p>
 
@@ -695,9 +777,8 @@ export default function MediaBin() {
                       {section.items.map((item) => (
                         <div
                           key={item.id}
-                          className={`group p-2 rounded-md border border-border/40 transition-colors ${
-                            item.isUploading ? "bg-accent/30 cursor-default" : "bg-card hover:bg-accent/30"
-                          }`}
+                          className={`group p-2 rounded-md border border-border/40 transition-colors ${item.isUploading ? "bg-accent/30 cursor-default" : "bg-card hover:bg-accent/30"
+                            }`}
                           draggable={!item.isUploading}
                           onDragStart={(e) => {
                             if (!item.isUploading) {
@@ -712,9 +793,8 @@ export default function MediaBin() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <p
-                                  className={`text-xs font-medium truncate ${
-                                    item.isUploading ? "text-muted-foreground" : "text-foreground"
-                                  }`}>
+                                  className={`text-xs font-medium truncate ${item.isUploading ? "text-muted-foreground" : "text-foreground"
+                                    }`}>
                                   {item.name}
                                 </p>
                                 {item.isUploading && typeof item.uploadProgress === "number" && (

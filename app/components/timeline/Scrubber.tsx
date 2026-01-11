@@ -1,6 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { DEFAULT_TRACK_HEIGHT, type ScrubberState, type Transition } from "./types";
-import { Trash2, Group, Ungroup, Archive } from "lucide-react";
+import { Trash2, Group, Ungroup, Archive, Braces } from "lucide-react";
+import { Modal } from "~/components/ui/modal";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 
 // something something for the css not gonna bother with it for now
 export interface SnapConfig {
@@ -26,6 +29,7 @@ export interface ScrubberProps {
   onMoveToMediaBin?: (scrubberId: string) => void;
   selectedScrubberIds: string[];
   onBeginTransform?: () => void; // drag or resize start snapshot
+  onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
 }
 
 export const Scrubber: React.FC<ScrubberProps> = ({
@@ -46,6 +50,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
   onMoveToMediaBin,
   selectedScrubberIds = [],
   onBeginTransform,
+  onAssignVariable,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -61,6 +66,11 @@ export const Scrubber: React.FC<ScrubberProps> = ({
     x: number;
     y: number;
   }>({ visible: false, x: 0, y: 0 });
+
+  // Variable Dialog State
+  const [isVariableDialogOpen, setIsVariableDialogOpen] = useState(false);
+  const [variableNameInput, setVariableNameInput] = useState("");
+  const [variableNameError, setVariableNameError] = useState<string | null>(null);
 
   const MINIMUM_WIDTH = 20;
 
@@ -402,6 +412,47 @@ export const Scrubber: React.FC<ScrubberProps> = ({
     setContextMenu({ visible: false, x: 0, y: 0 });
   }, [onMoveToMediaBin, scrubber.id]);
 
+  // Handle context menu make variable action
+  const handleContextMenuMakeVariable = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Initialize input with current name or empty
+    setVariableNameInput(scrubber.variableName || "");
+    setVariableNameError(null);
+    setIsVariableDialogOpen(true);
+
+    // Close context menu
+    setContextMenu({ visible: false, x: 0, y: 0 });
+  }, [scrubber.variableName]);
+
+  const handleSaveVariable = useCallback(() => {
+    const trimmed = variableNameInput.trim();
+
+    if (!trimmed) {
+      // Empty string means remove variable
+      onAssignVariable?.(scrubber.id, null);
+      setIsVariableDialogOpen(false);
+      return;
+    }
+
+    // Validate snake_case: lowercase letters, numbers, underscores, must start with letter
+    const isValidSnakeCase = /^[a-z][a-z0-9_]*$/.test(trimmed);
+
+    if (!isValidSnakeCase) {
+      setVariableNameError("Must be snake_case (lowercase letters, numbers, underscores, starting with letter). Example: my_variable_1");
+      return;
+    }
+
+    onAssignVariable?.(scrubber.id, trimmed);
+    setIsVariableDialogOpen(false);
+  }, [variableNameInput, onAssignVariable, scrubber.id]);
+
+  const handleCloseVariableDialog = useCallback(() => {
+    setIsVariableDialogOpen(false);
+    setVariableNameError(null);
+  }, []);
+
   // Add click outside listener for context menu
   useEffect(() => {
     if (contextMenu.visible) {
@@ -439,10 +490,37 @@ export const Scrubber: React.FC<ScrubberProps> = ({
           {scrubber.mediaType === "groupped_scrubber" && "G"}
         </div>
 
-        {/* Media name */}
-        <div className="absolute top-0.5 left-6 right-6 text-xs truncate opacity-90 pointer-events-none">
-          {scrubber.name}
+        {/* Media name - for text scrubbers, render {{ varName }} as visual badges */}
+        <div className="absolute top-0.5 left-6 right-2 text-xs truncate items-center opacity-90 pointer-events-none flex items-center gap-0.5 overflow-hidden">
+          {scrubber.mediaType === "text" && scrubber.name ? (
+            // Parse and render variable references as badges
+            (() => {
+              const parts = scrubber.name.split(/(\{\{\s*\w+\s*\}\})/g);
+              return parts.map((part, i) => {
+                const match = part.match(/\{\{\s*(\w+)\s*\}\}/);
+                if (match) {
+                  return (
+                    <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-500/90 text-white shrink-0">
+                      <Braces className="h-2.5 w-2.5" />
+                      {match[1]}
+                    </span>
+                  );
+                }
+                return part ? <span key={i} className="truncate">{part}</span> : null;
+              });
+            })()
+          ) : (
+            scrubber.name
+          )}
         </div>
+
+        {/* Variable badge - shows when scrubber has a variable assigned */}
+        {(scrubber.variableName || scrubber.mediaType !== "text") && (
+          <div className="absolute bottom-0.5 left-2 flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] bg-purple-500/80 text-white pointer-events-none">
+            <Braces className="h-2 w-2" />
+            <span className="truncate max-w-[60px]">{scrubber.variableName}</span>
+          </div>
+        )}
 
         {/* Left resize handle - more visible */}
         {scrubber.mediaType !== "video" && scrubber.mediaType !== "audio" && scrubber.mediaType !== "groupped_scrubber" && (
@@ -536,6 +614,17 @@ export const Scrubber: React.FC<ScrubberProps> = ({
             </button>
           )}
 
+          {/* Make Variable option for video/image/audio scrubbers that don't have a variable yet */}
+          {(scrubber.mediaType === "video" || scrubber.mediaType === "image" || scrubber.mediaType === "audio") && !scrubber.variableName && (
+            <button
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-muted transition-colors text-left text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+              onClick={handleContextMenuMakeVariable}
+            >
+              <Braces className="h-3 w-3" />
+              Make Variable
+            </button>
+          )}
+
           <button
             className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-muted transition-colors text-left text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
             onClick={handleContextMenuDelete}
@@ -545,6 +634,40 @@ export const Scrubber: React.FC<ScrubberProps> = ({
           </button>
         </div>
       )}
+
+      {/* Variable Name Dialog */}
+      <Modal
+        open={isVariableDialogOpen}
+        onClose={handleCloseVariableDialog}
+        title="Edit Variable Name"
+      >
+        <div className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Input
+              value={variableNameInput}
+              onChange={(e) => {
+                setVariableNameInput(e.target.value);
+                setVariableNameError(null);
+              }}
+              placeholder="e.g. my_variable_1"
+              onKeyDown={(e) => e.key === "Enter" && handleSaveVariable()}
+              autoFocus
+              className={variableNameError ? "border-destructive focus-visible:ring-destructive/20" : ""}
+            />
+            {variableNameError && (
+              <p className="text-[11px] text-destructive font-medium">{variableNameError}</p>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              Only use lowercase letters, numbers, and underscores. Must start with a letter.
+              Clear text to remove variable.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={handleCloseVariableDialog}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveVariable}>Save</Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };
