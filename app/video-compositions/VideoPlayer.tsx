@@ -19,8 +19,10 @@ import {
   type TimelineDataItem,
   type TimelineState,
   type Transition,
+  type Scene,
 } from "../components/timeline/types";
 import { SortedOutlines, layerContainer, outer } from "./DragDrop";
+import { transformTimelineToData } from "~/utils/timeline-utils";
 
 type TimelineCompositionProps = {
   timelineData: TimelineDataItem[];
@@ -31,6 +33,7 @@ type TimelineCompositionProps = {
   handleUpdateScrubber: (updateScrubber: ScrubberState) => void;
   getPixelsPerSecond: number | (() => number);
   variableValues?: Record<string, string>;
+  scenes?: Scene[];
 };
 
 // props for the preview mode player
@@ -46,6 +49,7 @@ export type VideoPlayerProps = {
   setSelectedItem: React.Dispatch<React.SetStateAction<string | null>>;
   getPixelsPerSecond: number | (() => number);
   variableValues?: Record<string, string>;
+  scenes?: Scene[];
 };
 
 export function TimelineComposition({
@@ -57,11 +61,12 @@ export function TimelineComposition({
   handleUpdateScrubber,
   getPixelsPerSecond,
   variableValues,
+  scenes = [],
 }: TimelineCompositionProps) {
   // Resolve pixels per second based on rendering mode
-  const resolvedPixelsPerSecond = isRendering
-    ? (getPixelsPerSecond as number)
-    : (getPixelsPerSecond as () => number)();
+  const resolvedPixelsPerSecond = typeof getPixelsPerSecond === "function"
+    ? getPixelsPerSecond()
+    : getPixelsPerSecond;
   // Get all transitions from timelineData
   const allTransitions = timelineData[0].transitions;
 
@@ -213,6 +218,59 @@ export function TimelineComposition({
               trimBefore={scrubber.trimBefore || undefined}
               trimAfter={scrubber.trimAfter || undefined}
             />
+          </AbsoluteFill>
+        );
+        break;
+      }
+      case "scene": {
+        // Find the scene definition
+        const sceneId = (scrubber as any).sceneId;
+        const scene = scenes.find((s) => s.id === sceneId);
+
+        if (!scene) {
+          console.warn(`Scene not found: ${sceneId}`);
+          return null; // Don't render anything if scene is missing
+        }
+
+        // Transform the scene's timeline into renderable data
+        // For nested scenes, we assume standard pixels per second for now to keep internal timing consistent relative to the scrubber duration
+        const sceneTimelineData = transformTimelineToData(scene.timeline, PIXELS_PER_SECOND);
+
+        // Merge parent variables with scene instance variables
+        // Parent variables take precedence if there's conflict, but typically scene variables 
+        // are scoped to the instance. Using a simple merge here.
+        const instanceVariables = (scrubber as any).variableValues || {};
+        const mergedVariables = { ...(variableValues || {}), ...instanceVariables };
+
+        // Calculate duration in seconds, handling both type variants
+        const durationInSeconds = 'duration' in scrubber
+          ? scrubber.duration
+          : scrubber.width / resolvedPixelsPerSecond;
+
+        content = (
+          <AbsoluteFill
+            style={{
+              left: scrubber.left_player,
+              top: scrubber.top_player,
+              width: scrubber.width_player,
+              height: scrubber.height_player,
+              overflow: "hidden", // Clip content to scene bounds
+            }}
+          >
+            <Sequence durationInFrames={Math.round(durationInSeconds * FPS)}>
+              <TimelineComposition
+                timelineData={sceneTimelineData}
+                // Recursive call for nested structure
+                isRendering={isRendering}
+                selectedItem={null} // Don't select items inside nested scenes
+                setSelectedItem={() => { }} // No-op for nested selection
+                timeline={scene.timeline} // Pass scene timeline
+                handleUpdateScrubber={() => { }} // No-op for nested updates (read-only)
+                getPixelsPerSecond={PIXELS_PER_SECOND} // Use standard PPS for internal relative sizing
+                variableValues={mergedVariables}
+                scenes={scenes} // Pass scene context down for deeper recursion
+              />
+            </Sequence>
           </AbsoluteFill>
         );
         break;
@@ -519,6 +577,7 @@ export function VideoPlayer({
   setSelectedItem,
   getPixelsPerSecond,
   variableValues,
+  scenes,
 }: VideoPlayerProps) {
   // Calculate composition width if not provided
   if (compositionWidth === null) {
@@ -570,6 +629,7 @@ export function VideoPlayer({
         handleUpdateScrubber,
         getPixelsPerSecond,
         variableValues,
+        scenes,
       }}
       durationInFrames={safeDuration}
       compositionWidth={safeWidth}

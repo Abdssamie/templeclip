@@ -21,7 +21,7 @@ export const TransitionSchema = z.object({
 
 export const MediaBinBaseSchema = z.object({
   id: z.string(),
-  mediaType: z.enum(["video", "image", "audio", "text", "groupped_scrubber"]),
+  mediaType: z.enum(["video", "image", "audio", "text", "groupped_scrubber", "scene"]),
   mediaUrlLocal: z.string().nullable(),
   mediaUrlRemote: z.string().nullable(),
   media_width: z.number(),

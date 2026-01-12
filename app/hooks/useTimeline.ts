@@ -1,3 +1,4 @@
+import { transformTimelineToData } from "../utils/timeline-utils";
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
   PIXELS_PER_SECOND,
@@ -149,68 +150,7 @@ export const useTimeline = () => {
 
   const getTimelineData = useCallback((): TimelineDataItem[] => {
     const pixelsPerSecond = getPixelsPerSecond();
-
-    const scrubbers = [];
-    for (const track of timeline.tracks) {
-      for (const scrubber of track.scrubbers) {
-        scrubbers.push({
-          id: scrubber.id,
-          mediaType: scrubber.mediaType,
-          mediaUrlLocal: scrubber.mediaUrlLocal,
-          mediaUrlRemote: scrubber.mediaUrlRemote,
-          width: scrubber.width,
-          startTime: scrubber.left / pixelsPerSecond,
-          endTime: (scrubber.left + scrubber.width) / pixelsPerSecond,
-          duration: scrubber.width / pixelsPerSecond,
-          trackId: track.id,
-          trackIndex: scrubber.y || 0,
-          media_width: scrubber.media_width,
-          media_height: scrubber.media_height,
-          text: scrubber.text,
-
-          // the following are the properties of the scrubber in <Player>
-          left_player: scrubber.left_player,
-          top_player: scrubber.top_player,
-          width_player: scrubber.width_player,
-          height_player: scrubber.height_player,
-
-          // for video scrubbers (and audio in the future)
-          trimBefore: scrubber.trimBefore,
-          trimAfter: scrubber.trimAfter,
-
-          left_transition_id: scrubber.left_transition_id,
-          right_transition_id: scrubber.right_transition_id,
-          groupped_scrubbers: scrubber.groupped_scrubbers,
-        });
-      }
-    }
-
-    const transitions: { [id: string]: Transition } = {};
-    for (const track of timeline.tracks) {
-      for (const transition of track.transitions) {
-        transitions[transition.id] = {
-          id: transition.id,
-          presentation: transition.presentation,
-          timing: transition.timing,
-          durationInFrames: transition.durationInFrames,
-          leftScrubberId: transition.leftScrubberId,
-          rightScrubberId: transition.rightScrubberId,
-        };
-      }
-    }
-
-    const timelineData = [
-      {
-        // id: timeline.id,
-        // totalDuration: timelineWidth / pixelsPerSecond,
-        scrubbers: scrubbers,
-        transitions: transitions,
-      },
-    ];
-
-    // console.log('bahahh', JSON.stringify(timelineData, null, 2));
-
-    return timelineData;
+    return transformTimelineToData(timeline, pixelsPerSecond);
   }, [timeline, getPixelsPerSecond]);
 
   const getTimelineState = useCallback(() => {
@@ -655,7 +595,9 @@ export const useTimeline = () => {
       sceneName: string,
       variableSchema: any[],
       trackId: string,
-      dropLeftPx: number
+      dropLeftPx: number,
+      compositionWidth: number,
+      compositionHeight: number
     ): string => {
       snapshotTimeline();
       console.log("Dropped scene", sceneName, "on track", trackId, "at", dropLeftPx, "px");
@@ -692,8 +634,8 @@ export const useTimeline = () => {
         // Player properties
         left_player: 0,
         top_player: 0,
-        width_player: 0,
-        height_player: 0,
+        width_player: compositionWidth,
+        height_player: compositionHeight,
         is_dragging: false,
 
         // Specific properties

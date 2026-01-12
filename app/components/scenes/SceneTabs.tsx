@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Modal } from "~/components/ui/modal";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -19,10 +19,11 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
 } from "~/components/ui/alert-dialog";
-import { Plus, MoreVertical, Edit3, Trash2, Clapperboard, Check } from "lucide-react";
+import { Plus, X, Edit3, Trash2, Home, Clapperboard, MonitorPlay } from "lucide-react";
 import type { Scene } from "~/components/timeline/types";
+import { cn } from "~/lib/utils";
 
-interface ScenesPanelProps {
+interface SceneTabsProps {
     scenes: Scene[];
     activeSceneId: string | null;
     onCreateScene: (name: string) => Promise<string | null>;
@@ -31,7 +32,7 @@ interface ScenesPanelProps {
     onRenameScene: (sceneId: string, newName: string) => Promise<boolean>;
 }
 
-export const ScenesPanel: React.FC<ScenesPanelProps> = ({
+export const SceneTabs: React.FC<SceneTabsProps> = ({
     scenes,
     activeSceneId,
     onCreateScene,
@@ -58,7 +59,7 @@ export const ScenesPanel: React.FC<ScenesPanelProps> = ({
             if (sceneId) {
                 setShowCreateModal(false);
                 setNewSceneName("");
-                onSelectScene(sceneId); // Auto-select the new scene
+                onSelectScene(sceneId);
             }
         } finally {
             setCreating(false);
@@ -81,93 +82,88 @@ export const ScenesPanel: React.FC<ScenesPanelProps> = ({
         if (success) {
             setShowDeleteDialog(false);
             setDeleteSceneId(null);
-            // If we deleted the active scene, deselect it
-            if (deleteSceneId === activeSceneId) {
-                onSelectScene(null);
-            }
         }
     };
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-3 border-b border-border">
-                <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-medium">Scenes</h3>
-                    <span className="text-xs text-muted-foreground border border-border/30 rounded-full px-2 py-0.5">
-                        {scenes.length}
-                    </span>
-                </div>
-                <Button size="sm" onClick={() => setShowCreateModal(true)} className="h-7 text-xs">
-                    <Plus className="h-3 w-3 mr-1" />
-                    New
-                </Button>
-            </div>
+        <div className="flex items-center w-full border-b border-border bg-background select-none">
+            <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex items-center p-1 gap-1">
+                    {/* Main Timeline Tab */}
+                    <button
+                        onClick={() => onSelectScene(null)}
+                        className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors border border-transparent",
+                            activeSceneId === null
+                                ? "bg-muted text-foreground border-border shadow-sm"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        )}
+                    >
+                        <MonitorPlay className="h-3.5 w-3.5" />
+                        Main Timeline
+                    </button>
 
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                    <div className="w-px h-4 bg-border mx-1" />
 
-                {scenes.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <Clapperboard className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                        <p className="text-xs text-muted-foreground">
-                            No scenes yet
-                        </p>
-                    </div>
-                ) : (
-                    scenes.map((scene) => (
-                        <Card
+
+
+                    {/* Fixed structure implementation for loop */}
+                    {scenes.map((scene) => (
+                        <div
                             key={scene.id}
-                            className="p-2 cursor-move transition-colors hover:bg-muted/50 group"
-                            draggable
-                            onDragStart={(e) => {
-                                // Set drag data for timeline drop
-                                e.dataTransfer.setData("application/json", JSON.stringify({
-                                    type: "scene",
-                                    sceneId: scene.id,
-                                    sceneName: scene.name,
-                                    variableSchema: scene.variableSchema,
-                                }));
-                                e.dataTransfer.effectAllowed = "copy";
-                            }}
+                            className={cn(
+                                "group flex items-center gap-2 pl-3 pr-1 py-1.5 text-xs font-medium rounded-md transition-colors border border-transparent cursor-pointer relative",
+                                activeSceneId === scene.id
+                                    ? "bg-primary/10 text-primary border-primary/20 shadow-sm"
+                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            )}
+                            onClick={() => onSelectScene(scene.id)}
                         >
-                            <div className="flex items-center gap-2">
-                                <Clapperboard className="h-4 w-4 text-muted-foreground" />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{scene.name}</p>
-                                    {scene.variableSchema.length > 0 && (
-                                        <p className="text-xs text-muted-foreground">
-                                            {scene.variableSchema.length} var{scene.variableSchema.length !== 1 ? "s" : ""}
-                                        </p>
-                                    )}
-                                </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button
-                                            className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <MoreVertical className="h-3.5 w-3.5" />
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setRenameSceneId(scene.id);
-                                                setRenameValue(scene.name);
-                                                setShowRenameModal(true);
-                                            }}
-                                        >
-                                            <Edit3 className="h-3.5 w-3.5 mr-2" />
-                                            Rename
-                                        </DropdownMenuItem>
+                            <Clapperboard className="h-3.5 w-3.5" />
+                            <span className="mr-1">{scene.name}</span>
 
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </Card>
-                    ))
-                )}
-            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        className={cn(
+                                            "h-5 w-5 flex items-center justify-center rounded-sm hover:bg-background/20 opacity-0 group-hover:opacity-100 transition-all",
+                                            activeSceneId === scene.id && "opacity-100"
+                                        )}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="h-0.5 w-0.5 rounded-full bg-current mb-[2px]" />
+                                        <div className="h-0.5 w-0.5 rounded-full bg-current mb-[2px]" />
+                                        <div className="h-0.5 w-0.5 rounded-full bg-current" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                    <DropdownMenuItem onClick={() => {
+                                        setRenameSceneId(scene.id);
+                                        setRenameValue(scene.name);
+                                        setShowRenameModal(true);
+                                    }}>
+                                        <Edit3 className="h-3.5 w-3.5 mr-2" />
+                                        Rename
+                                    </DropdownMenuItem>
+
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    ))}
+
+                    {/* New Scene Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 ml-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowCreateModal(true)}
+                        title="Create New Scene"
+                    >
+                        <Plus className="h-4 w-4" />
+                    </Button>
+                </div>
+                <ScrollBar orientation="horizontal" className="h-2" />
+            </ScrollArea>
 
             {/* Create Scene Modal */}
             <Modal

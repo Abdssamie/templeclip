@@ -1,0 +1,73 @@
+import {
+    type TimelineState,
+    type TimelineDataItem,
+    type Transition,
+} from "../components/timeline/types";
+
+export function transformTimelineToData(
+    timeline: TimelineState,
+    pixelsPerSecond: number
+): TimelineDataItem[] {
+    const scrubbers = [];
+    for (const track of timeline.tracks) {
+        if (!track.scrubbers) continue;
+        for (const scrubber of track.scrubbers) {
+            scrubbers.push({
+                id: scrubber.id,
+                mediaType: scrubber.mediaType,
+                mediaUrlLocal: scrubber.mediaUrlLocal,
+                mediaUrlRemote: scrubber.mediaUrlRemote,
+                width: scrubber.width,
+                startTime: scrubber.left / pixelsPerSecond,
+                endTime: (scrubber.left + scrubber.width) / pixelsPerSecond,
+                duration: scrubber.width / pixelsPerSecond,
+                trackId: track.id,
+                trackIndex: scrubber.y || 0,
+                media_width: scrubber.media_width,
+                media_height: scrubber.media_height,
+                text: scrubber.text,
+
+                // the following are the properties of the scrubber in <Player>
+                left_player: scrubber.left_player,
+                top_player: scrubber.top_player,
+                width_player: scrubber.width_player,
+                height_player: scrubber.height_player,
+
+                // for video scrubbers (and audio in the future)
+                trimBefore: scrubber.trimBefore,
+                trimAfter: scrubber.trimAfter,
+
+                left_transition_id: scrubber.left_transition_id,
+                right_transition_id: scrubber.right_transition_id,
+                groupped_scrubbers: scrubber.groupped_scrubbers,
+
+                // Scene specific properties
+                sceneId: (scrubber as any).sceneId,
+                sceneName: (scrubber as any).sceneName,
+                variableValues: (scrubber as any).variableValues
+            });
+        }
+    }
+
+    const transitions: { [id: string]: Transition } = {};
+    for (const track of timeline.tracks) {
+        if (!track.transitions) continue;
+        for (const transition of track.transitions) {
+            transitions[transition.id] = {
+                id: transition.id,
+                presentation: transition.presentation,
+                timing: transition.timing,
+                durationInFrames: transition.durationInFrames,
+                leftScrubberId: transition.leftScrubberId,
+                rightScrubberId: transition.rightScrubberId,
+            };
+        }
+    }
+
+    return [
+        {
+            scrubbers: scrubbers,
+            transitions: transitions,
+        },
+    ];
+}

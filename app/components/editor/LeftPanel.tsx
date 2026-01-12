@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation } from "react-router";
 import { FileImage, Type, BetweenVerticalEnd, Clapperboard } from "lucide-react";
 import { type MediaBinItem, type Scene } from "~/components/timeline/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { ScenesPanel } from "~/components/scenes/ScenesPanel";
 
 interface LeftPanelProps {
   mediaBinItems: MediaBinItem[];
@@ -99,7 +98,7 @@ export default function LeftPanel({
                 value="scenes"
                 asChild
                 className="h-8 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                <Link to="scenes" className="flex items-center gap-1.5">
+                <Link to="scenes" className="flex items-center gap-1.5" title="Scene Library">
                   <Clapperboard className="h-3 w-3" />
                 </Link>
               </TabsTrigger>

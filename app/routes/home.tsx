@@ -1,3 +1,4 @@
+import { SceneTabs } from "~/components/scenes/SceneTabs";
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import type { PlayerRef, CallbackListener } from "@remotion/player";
@@ -174,6 +175,44 @@ export default function TimelineEditor() {
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [projectTimeline, setProjectTimeline] = useState<TimelineState | null>(null);
 
+  // Sync Scene Variable Schema when timeline changes
+  useEffect(() => {
+    if (!activeSceneId) return;
+
+    // Debounce the sync to avoid rapid updates
+    const timer = setTimeout(() => {
+      const currentScene = scenes.find(s => s.id === activeSceneId);
+      if (!currentScene) return;
+
+      const currentVariables = getVariablesFromTimeline();
+
+      // Transform to schema format
+      const newSchema = currentVariables.reduce<any[]>((acc, v) => {
+        if (!acc.find((i: any) => i.name === v.name)) {
+          acc.push({
+            name: v.name,
+            type: v.mediaType,
+            label: v.name
+          });
+        }
+        return acc;
+      }, []);
+
+      // Check for changes (simple length check + name check to avoid unnecessary excessive updates)
+      // A more robust check might stringify, but this is okay for now. 
+      // Actually, JSON stringify is safest.
+      const hasChanged = JSON.stringify(newSchema) !== JSON.stringify(currentScene.variableSchema);
+
+      if (hasChanged) {
+        console.log("Syncing scene variables:", newSchema);
+        updateScene(activeSceneId, { variableSchema: newSchema });
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [activeSceneId, timeline, scenes, updateScene, getVariablesFromTimeline]);
+
+
   // Load scenes when project loads
   useEffect(() => {
     if (projectId) {
@@ -229,6 +268,28 @@ export default function TimelineEditor() {
     },
     [updateScene],
   );
+
+  // Wrapper for deleteScene to handle active scene deletion gracefully
+  const handleDeleteSceneWrapper = useCallback(
+    async (sceneId: string) => {
+      // If deleting the active scene, switch to Main Timeline manually
+      if (activeSceneId === sceneId) {
+        console.log("Deleting active scene, switching to Main Timeline...");
+        if (projectTimeline) {
+          setTimelineFromServer(projectTimeline);
+        }
+        setActiveSceneId(null);
+
+        // Allow state to settle slightly before deletion to prevent race conditions
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
+        console.log("Deleting inactive scene...");
+      }
+      return await deleteScene(sceneId);
+    },
+    [activeSceneId, projectTimeline, setTimelineFromServer, deleteScene]
+  );
+
 
   // Persist MediaBin view state across panel switches
   const [mediaArrangeMode, setMediaArrangeMode] = useState<"default" | "group">("default");
@@ -810,7 +871,7 @@ export default function TimelineEditor() {
   }, [handleZoomIn, handleZoomOut]);
 
   const { user, isLoading: isAuthLoading, isSigningIn, signInWithGoogle, signOut } = useAuth();
-  console.log(user, isAuthLoading);
+
 
   return (
     <div
@@ -985,7 +1046,7 @@ export default function TimelineEditor() {
                 activeSceneId={activeSceneId}
                 onCreateScene={createScene}
                 onSelectScene={handleSelectScene}
-                onDeleteScene={deleteScene}
+                onDeleteScene={handleDeleteSceneWrapper}
                 onRenameScene={handleRenameScene}
               />
             </div>
@@ -994,8 +1055,21 @@ export default function TimelineEditor() {
           {/* Hide handle when collapsed to 0 */}
           <ResizableHandle withHandle className={isSidebarCollapsed ? "opacity-0 pointer-events-none" : undefined} />
 
+
+
+
           {/* Center Area: Preview and Timeline */}
           <ResizablePanel defaultSize={80}>
+            {/* Global Scene Tabs */}
+            <SceneTabs
+              scenes={scenes}
+              activeSceneId={activeSceneId}
+              onCreateScene={createScene}
+              onSelectScene={handleSelectScene}
+              onDeleteScene={deleteScene}
+              onRenameScene={handleRenameScene}
+            />
+
             <ResizablePanelGroup direction="vertical">
               {/* Preview Area */}
               <ResizablePanel defaultSize={65} minSize={40}>
@@ -1083,6 +1157,7 @@ export default function TimelineEditor() {
                         setSelectedItem={setSelectedItem}
                         getPixelsPerSecond={getPixelsPerSecond}
                         variableValues={variableValues}
+                        scenes={scenes}
                       />
                     </div>
 
@@ -1247,6 +1322,9 @@ export default function TimelineEditor() {
                     onBeginScrubberTransform={snapshotTimeline}
                     onAssignVariable={assignVariableToScrubber}
                     scenes={scenes}
+                    activeSceneId={activeSceneId}
+                    compositionWidth={isAutoSize ? 1080 : width} // Default to 1080 if auto, otherwise use explicit width
+                    compositionHeight={isAutoSize ? 1920 : height} // Default to 1920 if auto
                   />
                 </div>
               </ResizablePanel>

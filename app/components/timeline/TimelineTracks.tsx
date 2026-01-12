@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -28,7 +29,7 @@ interface TimelineTracksProps {
   onBeginScrubberTransform?: () => void;
   onDropOnTrack: (item: MediaBinItem, trackId: string, dropLeftPx: number) => void;
   onDropTransitionOnTrack: (transition: Transition, trackId: string, dropLeftPx: number) => void;
-  onDropSceneOnTrack: (sceneId: string, sceneName: string, variableSchema: any[], trackId: string, dropLeftPx: number) => void;
+  onDropSceneOnTrack: (sceneId: string, sceneName: string, variableSchema: any[], trackId: string, dropLeftPx: number, compositionWidth: number, compositionHeight: number) => void;
   onDeleteTransition: (transitionId: string) => void;
   getAllScrubbers: () => ScrubberState[];
   expandTimeline: () => boolean;
@@ -41,6 +42,9 @@ interface TimelineTracksProps {
   onMoveToMediaBin?: (scrubberId: string) => void;
   onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
   scenes?: Scene[];
+  activeSceneId?: string | null;
+  compositionWidth: number;
+  compositionHeight: number;
 }
 
 export const TimelineTracks: React.FC<TimelineTracksProps> = ({
@@ -68,6 +72,9 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
   onMoveToMediaBin,
   onAssignVariable,
   scenes = [],
+  activeSceneId = null,
+  compositionWidth,
+  compositionHeight,
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -205,13 +212,24 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                 if (data.type === "transition") {
                   onDropTransitionOnTrack(data, trackId, dropXInTimeline);
                 } else if (data.type === "scene") {
+                  console.log("Dropped scene data:", data);
+                  console.log("Current activeSceneId:", activeSceneId);
+
+                  // Prevent nesting scenes inside scenes (including logic to prevent recursion)
+                  if (activeSceneId) {
+                    toast.error("Cannot nest scenes! You can only drop scenes onto the main timeline.");
+                    return;
+                  }
+
                   // Handle scene drop
                   onDropSceneOnTrack(
                     data.sceneId,
                     data.sceneName,
                     data.variableSchema,
                     trackId,
-                    dropXInTimeline
+                    dropXInTimeline,
+                    compositionWidth,
+                    compositionHeight
                   );
                 } else {
                   // Handle media item drop
@@ -222,7 +240,8 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                     // Ignore invalid payloads
                   }
                 }
-              }}>
+              }
+              }>
               {/* Track backgrounds and grid lines */}
               {timeline.tracks.map((track, trackIndex) => (
                 <div key={track.id} className="relative" style={{ height: `${DEFAULT_TRACK_HEIGHT}px` }}>
@@ -277,6 +296,8 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                 const scrubberTrack = timeline.tracks.find((track) =>
                   track.scrubbers.some((s) => s.id === scrubber.id),
                 );
+
+
 
                 return (
                   <Scrubber
