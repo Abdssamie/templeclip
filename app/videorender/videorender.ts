@@ -15,7 +15,18 @@ const compositionId = "TimelineComposition";
 const bundleLocation = await bundle({
   entryPoint: path.resolve("./app/videorender/index.ts"),
   // If you have a webpack override in remotion.config.ts, pass it here as well.
-  webpackOverride: (config) => config,
+  webpackOverride: (config) => {
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        alias: {
+          ...(config.resolve?.alias ?? {}),
+          "~": path.resolve(process.cwd(), "app"),
+        },
+      },
+    };
+  },
 });
 
 console.log(bundleLocation);
