@@ -610,9 +610,21 @@ export default function TimelineEditor() {
       toast.error("Timeline is empty");
       return;
     }
-    console.log(JSON.stringify(getTimelineData(), null, 2));
-    toast.success("Timeline data logged to console");
-  }, [getTimelineData, timelineData]);
+
+    // Construct the full payload that would be sent to the renderer
+    const payload = {
+      timelineData: getTimelineData(),
+      scenes: scenes, // Important for resolving scene content
+      durationInFrames,
+      compositionWidth: isAutoSize ? null : width,
+      compositionHeight: isAutoSize ? null : height,
+      getPixelsPerSecond: getPixelsPerSecond(),
+      variableValues: variableValues,
+    };
+
+    console.log(JSON.stringify(payload, null, 2));
+    toast.success("Full render payload logged to console");
+  }, [getTimelineData, timelineData, scenes, durationInFrames, width, height, isAutoSize, getPixelsPerSecond, variableValues]);
 
   const handleWidthChange = useCallback((newWidth: number) => {
     setWidth(newWidth);

@@ -112,12 +112,22 @@ export const SceneTabs: React.FC<SceneTabsProps> = ({
                         <div
                             key={scene.id}
                             className={cn(
-                                "group flex items-center gap-2 pl-3 pr-1 py-1.5 text-xs font-medium rounded-md transition-colors border border-transparent cursor-pointer relative",
+                                "group flex items-center gap-2 pl-3 pr-1 py-1.5 text-xs font-medium rounded-md transition-colors border border-transparent cursor-grab active:cursor-grabbing relative",
                                 activeSceneId === scene.id
                                     ? "bg-primary/10 text-primary border-primary/20 shadow-sm"
                                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             )}
                             onClick={() => onSelectScene(scene.id)}
+                            draggable={true}
+                            onDragStart={(e) => {
+                                e.dataTransfer.setData("application/json", JSON.stringify({
+                                    type: "scene",
+                                    sceneId: scene.id,
+                                    sceneName: scene.name,
+                                    variableSchema: scene.variableSchema
+                                }));
+                                e.dataTransfer.effectAllowed = "copy";
+                            }}
                         >
                             <Clapperboard className="h-3.5 w-3.5" />
                             <span className="mr-1">{scene.name}</span>

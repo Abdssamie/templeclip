@@ -283,6 +283,7 @@ app.post("/render", async (req, res) => {
       compositionHeight: req.body.compositionHeight,
       getPixelsPerSecond: req.body.getPixelsPerSecond,
       variableValues: req.body.variableValues,
+      scenes: req.body.scenes,
       isRendering: true,
     };
 
