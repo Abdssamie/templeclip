@@ -11,6 +11,7 @@ export default [
     route("text-editor", "components/media/TextEditor.tsx"),
     route("media-bin", "components/timeline/MediaBinPage.tsx"),
     route("transitions", "components/media/Transitions.tsx"),
+    route("scenes", "components/scenes/ScenesPage.tsx"),
   ]),
   route("/api/auth/*", "routes/api.auth.$.tsx"),
   route("/api/projects/*", "routes/api.projects.$.tsx"),

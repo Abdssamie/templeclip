@@ -20,6 +20,7 @@ import {
   CornerUpRight,
   Group,
   Ungroup,
+  Clapperboard,
 } from "lucide-react";
 
 // Custom video controls
@@ -46,6 +47,7 @@ import { useTimeline } from "~/hooks/useTimeline";
 import { useMediaBin } from "~/hooks/useMediaBin";
 import { useRuler } from "~/hooks/useRuler";
 import { useRenderer } from "~/hooks/useRenderer";
+import { useScenes } from "~/hooks/useScenes";
 
 // Types and constants
 import {
@@ -55,6 +57,7 @@ import {
   type Transition,
   type TrackState,
   type ScrubberState,
+  type TimelineState,
 } from "~/components/timeline/types";
 import { useNavigate, useParams, useLocation } from "react-router";
 import { KimuLogo } from "~/components/ui/KimuLogo";
@@ -124,9 +127,11 @@ export default function TimelineEditor() {
     handleGroupScrubbers,
     handleUngroupScrubber,
     handleMoveGroupToMediaBin,
-    // Transition management
+    // Transition
     handleAddTransitionToTrack,
-    handleDeleteTransition,
+    onDropOnTrack,
+    onDropSceneOnTrack,
+    onDeleteTransition,
     getConnectedElements,
     handleUpdateScrubberWithLocking,
     setTimelineFromServer,
@@ -155,6 +160,75 @@ export default function TimelineEditor() {
     handleSplitAudioFromContext,
     handleCloseContextMenu,
   } = useMediaBin(handleDeleteScrubbersByMediaBinId);
+
+  // Scene management
+  const {
+    scenes,
+    loading: scenesLoading,
+    loadScenes,
+    createScene,
+    updateScene,
+    deleteScene,
+  } = useScenes(projectId || "");
+
+  const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+  const [projectTimeline, setProjectTimeline] = useState<TimelineState | null>(null);
+
+  // Load scenes when project loads
+  useEffect(() => {
+    if (projectId) {
+      loadScenes();
+    }
+  }, [projectId, loadScenes]);
+
+  // Handle scene selection
+  const handleSelectScene = useCallback(
+    (sceneId: string | null) => {
+      if (sceneId === null) {
+        // Switching back to main timeline
+        if (activeSceneId !== null) {
+          // Save current scene timeline before switching
+          const currentScene = scenes.find((s) => s.id === activeSceneId);
+          if (currentScene) {
+            updateScene(activeSceneId, { timeline: getTimelineState() });
+          }
+        }
+        // Restore project timeline
+        if (projectTimeline) {
+          setTimelineFromServer(projectTimeline);
+        }
+        setActiveSceneId(null);
+      } else {
+        // Switching to a scene
+        const scene = scenes.find((s) => s.id === sceneId);
+        if (scene) {
+          // Save current state
+          if (activeSceneId === null) {
+            // Save main timeline
+            setProjectTimeline(getTimelineState());
+          } else {
+            // Save previous scene
+            const prevScene = scenes.find((s) => s.id === activeSceneId);
+            if (prevScene) {
+              updateScene(activeSceneId, { timeline: getTimelineState() });
+            }
+          }
+          // Load scene timeline
+          setTimelineFromServer(scene.timeline);
+          setActiveSceneId(sceneId);
+          toast.success(`Editing scene: ${scene.name}`);
+        }
+      }
+    },
+    [activeSceneId, scenes, getTimelineState, setTimelineFromServer, updateScene, projectTimeline],
+  );
+
+  const handleRenameScene = useCallback(
+    async (sceneId: string, newName: string) => {
+      return await updateScene(sceneId, { name: newName });
+    },
+    [updateScene],
+  );
 
   // Persist MediaBin view state across panel switches
   const [mediaArrangeMode, setMediaArrangeMode] = useState<"default" | "group">("default");
@@ -201,7 +275,7 @@ export default function TimelineEditor() {
   }, []);
 
   const openSection = useCallback(
-    (section: "media-bin" | "text-editor" | "transitions") => {
+    (section: "media-bin" | "text-editor" | "transitions" | "scenes") => {
       const isProjectRoot = /^\/project\/[^/]+\/?$/.test(location.pathname);
       const isActive =
         (section === "media-bin" && (location.pathname.includes("/media-bin") || isProjectRoot)) ||
@@ -754,9 +828,20 @@ export default function TimelineEditor() {
           <h1 className="text-sm font-medium tracking-tight">Kimu Studio</h1>
         </div>
 
-        {/* Center project name */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {/* Center project name and scene indicator */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
           <span className="text-xs leading-none text-muted-foreground font-mono">{projectName || "Project"}</span>
+          {activeSceneId && (
+            <>
+              <span className="text-xs text-muted-foreground/50">/</span>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+                <Clapperboard className="h-3 w-3 text-primary" />
+                <span className="text-xs font-medium text-primary">
+                  {scenes.find(s => s.id === activeSceneId)?.name || "Scene"}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -807,6 +892,14 @@ export default function TimelineEditor() {
         {/* VSCode-like Activity Bar */}
         <div className="w-12 shrink-0 border-r border-border bg-muted/30 flex flex-col items-center justify-between py-2">
           <div className="flex flex-col items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/scenes") ? "bg-background text-primary" : "text-muted-foreground"}`}
+              onClick={() => openSection("scenes")}
+              title="Scenes">
+              <Clapperboard className="h-5 w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -887,6 +980,13 @@ export default function TimelineEditor() {
                 onVariableValueChange={(name, value) => setVariableValues(prev => ({ ...prev, [name]: value }))}
                 allScrubbers={getAllScrubbers().map(s => ({ id: s.id, variableName: s.variableName, mediaType: s.mediaType }))}
                 onAssignVariable={assignVariableToScrubber}
+                // Scene management
+                scenes={scenes}
+                activeSceneId={activeSceneId}
+                onCreateScene={createScene}
+                onSelectScene={handleSelectScene}
+                onDeleteScene={deleteScene}
+                onRenameScene={handleRenameScene}
               />
             </div>
           </ResizablePanel>
@@ -1133,7 +1233,8 @@ export default function TimelineEditor() {
                     onDeleteScrubber={handleDeleteScrubber}
                     onDropOnTrack={handleDropOnTrack}
                     onDropTransitionOnTrack={handleDropTransitionOnTrackWrapper}
-                    onDeleteTransition={handleDeleteTransition}
+                    onDropSceneOnTrack={onDropSceneOnTrack}
+                    onDeleteTransition={onDeleteTransition}
                     getAllScrubbers={getAllScrubbers}
                     expandTimeline={expandTimelineCallback}
                     onRulerMouseDown={handleRulerMouseDown}
@@ -1145,6 +1246,7 @@ export default function TimelineEditor() {
                     onMoveToMediaBin={handleMoveToMediaBinSelected}
                     onBeginScrubberTransform={snapshotTimeline}
                     onAssignVariable={assignVariableToScrubber}
+                    scenes={scenes}
                   />
                 </div>
               </ResizablePanel>

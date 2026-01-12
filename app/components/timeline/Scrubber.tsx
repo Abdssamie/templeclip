@@ -1,9 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { DEFAULT_TRACK_HEIGHT, type ScrubberState, type Transition } from "./types";
-import { Trash2, Group, Ungroup, Archive, Braces } from "lucide-react";
+import { DEFAULT_TRACK_HEIGHT, type ScrubberState, type Transition, type Scene } from "./types";
+import { Trash2, Group, Ungroup, Archive, Braces, Edit3 } from "lucide-react";
 import { Modal } from "~/components/ui/modal";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { VariableValueEditor } from "~/components/scenes/VariableValueEditor";
 
 // something something for the css not gonna bother with it for now
 export interface SnapConfig {
@@ -30,6 +31,7 @@ export interface ScrubberProps {
   selectedScrubberIds: string[];
   onBeginTransform?: () => void; // drag or resize start snapshot
   onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
+  scene?: Scene;
 }
 
 export const Scrubber: React.FC<ScrubberProps> = ({
@@ -51,6 +53,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
   selectedScrubberIds = [],
   onBeginTransform,
   onAssignVariable,
+  scene,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -71,6 +74,9 @@ export const Scrubber: React.FC<ScrubberProps> = ({
   const [isVariableDialogOpen, setIsVariableDialogOpen] = useState(false);
   const [variableNameInput, setVariableNameInput] = useState("");
   const [variableNameError, setVariableNameError] = useState<string | null>(null);
+
+  // Scene Variable Editor State
+  const [isSceneVariableEditorOpen, setIsSceneVariableEditorOpen] = useState(false);
 
   const MINIMUM_WIDTH = 20;
 
@@ -315,6 +321,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
       default: "bg-primary border-primary/60 text-primary-foreground",
       audio: "bg-blue-600 border-blue-400 text-white",
       groupped_scrubber: "bg-gray-600 border-gray-400 text-white",
+      scene: "bg-orange-600 border-orange-500 text-white",
     };
 
     const selectedColors = {
@@ -329,6 +336,8 @@ export const Scrubber: React.FC<ScrubberProps> = ({
         "bg-primary border-primary text-primary-foreground ring-2 ring-primary/50",
       groupped_scrubber:
         "bg-gray-600 border-gray-400 text-white ring-2 ring-gray-400/50",
+      scene:
+        "bg-orange-600 border-orange-400 text-white ring-2 ring-orange-400/50",
     };
 
     const colorSet = isSelected ? selectedColors : baseColors;
@@ -453,6 +462,23 @@ export const Scrubber: React.FC<ScrubberProps> = ({
     setVariableNameError(null);
   }, []);
 
+  const handleOpenSceneVariableEditor = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsSceneVariableEditorOpen(true);
+    setContextMenu({ visible: false, x: 0, y: 0 });
+  }, []);
+
+  const handleSaveSceneVariables = useCallback((values: Record<string, string>) => {
+    // Cast to any to access specific scene properties since ScrubberState is a union
+    const sceneScrubber = scrubber as any;
+    onUpdate({
+      ...scrubber,
+      variableValues: values,
+    } as ScrubberState);
+    setIsSceneVariableEditorOpen(false);
+  }, [scrubber, onUpdate]);
+
   // Add click outside listener for context menu
   useEffect(() => {
     if (contextMenu.visible) {
@@ -488,6 +514,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
           {scrubber.mediaType === "text" && "T"}
           {scrubber.mediaType === "audio" && "A"}
           {scrubber.mediaType === "groupped_scrubber" && "G"}
+          {scrubber.mediaType === "scene" && "S"}
         </div>
 
         {/* Media name - for text scrubbers, render {{ varName }} as visual badges */}
@@ -625,6 +652,17 @@ export const Scrubber: React.FC<ScrubberProps> = ({
             </button>
           )}
 
+          {/* Edit Scene Variables option */}
+          {scrubber.mediaType === "scene" && (
+            <button
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-muted transition-colors text-left text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+              onClick={handleOpenSceneVariableEditor}
+            >
+              <Edit3 className="h-3 w-3" />
+              Edit Variables
+            </button>
+          )}
+
           <button
             className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-muted transition-colors text-left text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
             onClick={handleContextMenuDelete}
@@ -668,6 +706,20 @@ export const Scrubber: React.FC<ScrubberProps> = ({
           </div>
         </div>
       </Modal>
+
+      {/* Scene Variable Value Editor */}
+      {
+        scrubber.mediaType === "scene" && (
+          <VariableValueEditor
+            open={isSceneVariableEditorOpen}
+            onClose={() => setIsSceneVariableEditorOpen(false)}
+            sceneName={scene?.name || scrubber.name}
+            variableSchema={scene?.variableSchema || []}
+            currentValues={(scrubber as any).variableValues || {}}
+            onSave={handleSaveSceneVariables}
+          />
+        )
+      }
     </>
   );
 };

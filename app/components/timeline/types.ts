@@ -1,7 +1,7 @@
 // base type for all scrubbers
 export interface BaseScrubber {
   id: string;
-  mediaType: "video" | "image" | "audio" | "text" | "groupped_scrubber";
+  mediaType: "video" | "image" | "audio" | "text" | "groupped_scrubber" | "scene";
   mediaUrlLocal: string | null; // null for text
   mediaUrlRemote: string | null;
   media_width: number; // width of the media in pixels
@@ -79,6 +79,55 @@ export interface TemplateVariable {
   name: string;
   type: "text" | "image" | "video" | "audio";
   defaultValue?: string;
+}
+
+// Scene instance scrubber (references a scene in the timeline)
+export interface SceneInstanceScrubber extends BaseScrubber {
+  mediaType: "scene";
+  sceneId: string; // Reference to the scene definition
+  variableValues: Record<string, string>; // Variable values for this instance
+  sceneName?: string; // Cached scene name for display
+}
+
+// Scene variable schema (defines what variables a scene expects)
+export interface SceneVariableSchema {
+  name: string; // e.g., "voiceover_audio", "headline"
+  type: "text" | "image" | "video" | "audio";
+  required: boolean;
+}
+
+// Elasticity rule (defines how scrubbers stretch during rendering)
+export interface ElasticityRule {
+  scrubberId: string;
+  strategy: "fixed" | "stretch"; // Only applicable to video/audio
+}
+
+// Scene definition (reusable timeline with variables and elasticity)
+export interface Scene {
+  id: string;
+  name: string;
+  description?: string;
+  timeline: TimelineState; // The actual timeline structure
+  variableSchema: SceneVariableSchema[]; // What variables this scene expects
+  elasticityRules: ElasticityRule[]; // How scrubbers should stretch
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Scene composition (for testing - defines scene order and transitions)
+export interface SceneComposition {
+  sceneOrder: string[]; // Array of scene IDs
+  transitions: {
+    fromSceneId: string;
+    toSceneId: string;
+    type: "fade" | "wipe" | "slide" | "clockWipe" | "flip" | "iris";
+    durationFrames: number;
+  }[];
+  testVariables?: {
+    [sceneId: string]: {
+      [variableName: string]: string;
+    };
+  };
 }
 
 // state of the timeline

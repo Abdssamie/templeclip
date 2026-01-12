@@ -72,6 +72,44 @@ export const TimelineStateSchema = z.object({
   variables: z.array(TemplateVariableSchema).optional(),
 });
 
+export const SceneVariableSchemaZod = z.object({
+  name: z.string().min(1),
+  type: z.enum(["text", "image", "video", "audio"]),
+  required: z.boolean(),
+});
+
+export const ElasticityRuleSchema = z.object({
+  scrubberId: z.string(),
+  strategy: z.enum(["fixed", "stretch"]),
+});
+
+export const SceneSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(120),
+  description: z.string().optional(),
+  timeline: TimelineStateSchema,
+  variableSchema: z.array(SceneVariableSchemaZod),
+  elasticityRules: z.array(ElasticityRuleSchema),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+export const SceneCompositionSchema = z.object({
+  sceneOrder: z.array(z.string()),
+  transitions: z.array(
+    z.object({
+      fromSceneId: z.string(),
+      toSceneId: z.string(),
+      type: z.enum(["fade", "wipe", "slide", "clockWipe", "flip", "iris"]),
+      durationFrames: z.number().int().positive(),
+    }),
+  ),
+  testVariables: z
+    .record(z.string(), z.record(z.string(), z.string()))
+    .optional(),
+});
+
 export type TimelineStateParsed = z.infer<typeof TimelineStateSchema>;
 export type ScrubberStateParsed = z.infer<typeof ScrubberStateSchema>;
-
+export type SceneParsed = z.infer<typeof SceneSchema>;
+export type SceneCompositionParsed = z.infer<typeof SceneCompositionSchema>;

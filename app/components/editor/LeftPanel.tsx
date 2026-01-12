@@ -1,8 +1,9 @@
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router";
-import { FileImage, Type, BetweenVerticalEnd } from "lucide-react";
-import { type MediaBinItem } from "~/components/timeline/types";
+import { FileImage, Type, BetweenVerticalEnd, Clapperboard } from "lucide-react";
+import { type MediaBinItem, type Scene } from "~/components/timeline/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { ScenesPanel } from "~/components/scenes/ScenesPanel";
 
 interface LeftPanelProps {
   mediaBinItems: MediaBinItem[];
@@ -37,6 +38,13 @@ interface LeftPanelProps {
   onVariableValueChange?: (variableName: string, value: string) => void;
   allScrubbers?: { id: string; variableName?: string | null; mediaType: string }[];
   onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
+  // Scene management
+  scenes?: Scene[];
+  activeSceneId?: string | null;
+  onCreateScene?: (name: string) => Promise<string | null>;
+  onSelectScene?: (sceneId: string | null) => void;
+  onDeleteScene?: (sceneId: string) => Promise<boolean>;
+  onRenameScene?: (sceneId: string, newName: string) => Promise<boolean>;
 }
 
 export default function LeftPanel({
@@ -59,6 +67,13 @@ export default function LeftPanel({
   onVariableValueChange,
   allScrubbers,
   onAssignVariable,
+  // Scene management
+  scenes = [],
+  activeSceneId = null,
+  onCreateScene,
+  onSelectScene,
+  onDeleteScene,
+  onRenameScene,
 }: LeftPanelProps) {
   const location = useLocation();
 
@@ -67,6 +82,7 @@ export default function LeftPanel({
     if (location.pathname.includes("/media-bin")) return "media-bin";
     if (location.pathname.includes("/text-editor")) return "text-editor";
     if (location.pathname.includes("/transitions")) return "transitions";
+    if (location.pathname.includes("/scenes")) return "scenes";
     return "media-bin"; // default
   };
 
@@ -78,7 +94,15 @@ export default function LeftPanel({
         {/* Tab Headers */}
         {showTabs && (
           <div className="border-b border-border bg-muted/30">
-            <TabsList className="grid w-full grid-cols-3 h-9 bg-transparent p-0">
+            <TabsList className="grid w-full grid-cols-4 h-9 bg-transparent p-0">
+              <TabsTrigger
+                value="scenes"
+                asChild
+                className="h-8 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Link to="scenes" className="flex items-center gap-1.5">
+                  <Clapperboard className="h-3 w-3" />
+                </Link>
+              </TabsTrigger>
               <TabsTrigger
                 value="media-bin"
                 asChild
@@ -108,30 +132,39 @@ export default function LeftPanel({
         )}
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-hidden p-2">
-          <Outlet
-            context={{
-              // MediaBin props
-              mediaBinItems,
-              isMediaLoading,
-              onAddMedia,
-              onAddText,
-              contextMenu,
-              handleContextMenu,
-              handleDeleteFromContext,
-              handleSplitAudioFromContext,
-              handleCloseContextMenu,
-              arrangeModeExternal: arrangeMode,
-              sortByExternal: sortBy,
-              onArrangeModeChange,
-              onSortByChange,
-              // Variable management
-              variableValues,
-              onVariableValueChange,
-              allScrubbers,
-              onAssignVariable,
-            }}
-          />
+        <div className="flex-1 overflow-hidden">
+          <div className="p-2 h-full">
+            <Outlet
+              context={{
+                // MediaBin props
+                mediaBinItems,
+                isMediaLoading,
+                onAddMedia,
+                onAddText,
+                contextMenu,
+                handleContextMenu,
+                handleDeleteFromContext,
+                handleSplitAudioFromContext,
+                handleCloseContextMenu,
+                arrangeModeExternal: arrangeMode,
+                sortByExternal: sortBy,
+                onArrangeModeChange,
+                onSortByChange,
+                // Variable management
+                variableValues,
+                onVariableValueChange,
+                allScrubbers,
+                onAssignVariable,
+                // Scene management
+                scenes,
+                activeSceneId,
+                onCreateScene,
+                onSelectScene,
+                onDeleteScene,
+                onRenameScene,
+              }}
+            />
+          </div>
         </div>
       </Tabs>
     </div>

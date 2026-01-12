@@ -649,6 +649,65 @@ export const useTimeline = () => {
     ],
   );
 
+  const handleDropSceneOnTrack = useCallback(
+    (
+      sceneId: string,
+      sceneName: string,
+      variableSchema: any[],
+      trackId: string,
+      dropLeftPx: number
+    ): string => {
+      snapshotTimeline();
+      console.log("Dropped scene", sceneName, "on track", trackId, "at", dropLeftPx, "px");
+
+      const pixelsPerSecond = getPixelsPerSecond();
+      // Default duration for scene (e.g., 5 seconds) until we load actual duration
+      const defaultDurationSec = 5;
+      const widthPx = defaultDurationSec * pixelsPerSecond;
+
+      const targetTrackIndex = timeline.tracks.findIndex((t) => t.id === trackId);
+      if (targetTrackIndex === -1) return '';
+
+      const newScrubber: ScrubberState = {
+        id: generateUUID(),
+        left: dropLeftPx,
+        width: widthPx,
+        mediaType: "scene",
+        sceneId: sceneId,
+        sceneName: sceneName,
+        variableValues: {}, // Initialize with empty values
+        mediaUrlLocal: null,
+        mediaUrlRemote: null,
+        y: targetTrackIndex,
+        name: sceneName,
+        durationInSeconds: defaultDurationSec,
+        media_width: 0,
+        media_height: 0,
+        text: null,
+        groupped_scrubbers: null,
+        sourceMediaBinId: "", // Logic specific to media bin items
+        uploadProgress: 0,
+        isUploading: false,
+
+        // Player properties
+        left_player: 0,
+        top_player: 0,
+        width_player: 0,
+        height_player: 0,
+        is_dragging: false,
+
+        // Specific properties
+        trimBefore: null,
+        trimAfter: null,
+        left_transition_id: null,
+        right_transition_id: null,
+      } as ScrubberState;
+
+      return handleAddScrubberToTrack(trackId, newScrubber);
+    },
+    [timeline.tracks, handleAddScrubberToTrack, getPixelsPerSecond, snapshotTimeline],
+  );
+
   const handleSplitScrubberAtRuler = useCallback(
     (rulerPositionPx: number, selectedScrubberId: string | null) => {
       snapshotTimeline();
@@ -1579,9 +1638,11 @@ export const useTimeline = () => {
     handleGroupScrubbers,
     handleUngroupScrubber,
     handleMoveGroupToMediaBin,
-    // Transition management
+    onDropOnTrack: handleDropOnTrack,
     handleAddTransitionToTrack,
-    handleDeleteTransition,
+    // onDropTransitionOnTrack: handleDropTransitionOnTrack,
+    onDropSceneOnTrack: handleDropSceneOnTrack,
+    onDeleteTransition: handleDeleteTransition,
     getConnectedElements,
     handleUpdateScrubberWithLocking,
     setTimelineFromServer,

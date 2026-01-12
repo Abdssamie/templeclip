@@ -91,3 +91,35 @@ export async function deleteProjectById(
     client.release();
   }
 }
+
+export async function getProjectScenes(
+  id: string
+): Promise<unknown[]> {
+  const client = await getPool().connect();
+  try {
+    const { rows } = await client.query<{ scenes: unknown[] }>(
+      `select scenes from projects where id = $1`,
+      [id]
+    );
+    return rows[0]?.scenes ?? [];
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateProjectScenes(
+  id: string,
+  userId: string,
+  scenes: unknown[]
+): Promise<boolean> {
+  const client = await getPool().connect();
+  try {
+    const { rowCount } = await client.query(
+      `update projects set scenes = $1, updated_at = now() where id = $2 and user_id = $3`,
+      [JSON.stringify(scenes), id, userId]
+    );
+    return (rowCount ?? 0) > 0;
+  } finally {
+    client.release();
+  }
+}

@@ -1,5 +1,5 @@
 import { auth } from "~/lib/auth.server";
-import { createProject, getProjectById, listProjectsByUser, deleteProjectById } from "~/lib/projects.repo";
+import { createProject, getProjectById, listProjectsByUser, deleteProjectById, getProjectScenes, updateProjectScenes } from "~/lib/projects.repo";
 import { listAssetsByUser, getAssetById, softDeleteAsset } from "~/lib/assets.repo";
 import fs from "fs";
 import path from "path";
@@ -56,10 +56,12 @@ export async function loader({ request }: { request: Request }) {
     const proj = await getProjectById(id);
     if (!proj || proj.user_id !== userId) return new Response("Not Found", { status: 404 });
     const state = await loadProjectState(id);
+    const scenes = await getProjectScenes(id);
     const payload = ProjectStateResponseSchema.parse({
       project: proj,
       timeline: state.timeline,
       textBinItems: state.textBinItems,
+      scenes: scenes,
     });
     return new Response(JSON.stringify(payload), { status: 200, headers: { "Content-Type": "application/json" } });
   }
@@ -172,7 +174,8 @@ export async function action({ request }: { request: Request }) {
     const name: string | undefined = parsed.success ? parsed.data.name : undefined;
     const timeline: TimelineState | undefined = (parsed.success ? parsed.data.timeline : undefined) as any;
     const textBinItems: MediaBinItem[] | undefined = (parsed.success ? parsed.data.textBinItems : undefined) as any;
-    if (!name && !timeline && !textBinItems)
+    const scenes: unknown[] | undefined = (parsed.success ? parsed.data.scenes : undefined) as any;
+    if (!name && !timeline && !textBinItems && !scenes)
       return new Response(JSON.stringify({ error: "No changes" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -212,6 +215,9 @@ export async function action({ request }: { request: Request }) {
         timeline: timeline ?? prev.timeline,
         textBinItems: textBinItems ?? prev.textBinItems,
       });
+    }
+    if (scenes) {
+      await updateProjectScenes(id, userId, scenes);
     }
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

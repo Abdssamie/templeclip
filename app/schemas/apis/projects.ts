@@ -25,6 +25,7 @@ export const ProjectStateResponseSchema = z.object({
   }),
   timeline: z.unknown(),
   textBinItems: z.array(z.unknown()),
+  scenes: z.array(z.unknown()).default([]), // Scene data from database
 });
 
 export const CreateProjectBodySchema = z.object({ name: z.string().min(1).max(120).default("Untitled Project") });
@@ -41,4 +42,9 @@ export const PatchProjectBodySchema = z.object({
     .array(z.unknown())
     .nullish()
     .transform((v) => v ?? undefined),
+  scenes: z
+    .array(z.unknown())
+    .nullish()
+    .transform((v) => v ?? undefined),
 });
+

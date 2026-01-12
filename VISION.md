@@ -13,7 +13,7 @@ To pivot Kimu from a manual video editor into a **Video Template Engine** and **
 Instead of building one fixed 60-second video, Kimu will focus on a **Modular Scene Architecture**:
 
 - **Atomic Scenes:** Small, reusable Remotion compositions (3-10 seconds) designed for specific purposes (e.g., Hook, Deep Dive, Quote, Call to Action).
-- **Elasticity:** Scenes are not fixed in duration. They expand or contract based on the length of the input (e.g., audio duration or text length).
+- **Elasticity:** Scenes are not fixed in duration. They expand or contract based on the length of the input (e.g., audio duration or text length). This is only handled during server side rendering or video exporting using the new media items
 - **Theming:** Visual styles (colors, fonts, aspect ratios) are passed as high-level props, allowing the same logic to render differently for LinkedIn (4:5) vs. YouTube (16:9).
 
 ---

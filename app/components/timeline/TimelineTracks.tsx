@@ -11,6 +11,8 @@ import {
   type MediaBinItem,
   type TimelineState,
   type Transition,
+  type Scene,
+  FPS,
 } from "./types";
 import { MediaBinItemSchema } from "~/schemas/components/timeline";
 
@@ -26,6 +28,7 @@ interface TimelineTracksProps {
   onBeginScrubberTransform?: () => void;
   onDropOnTrack: (item: MediaBinItem, trackId: string, dropLeftPx: number) => void;
   onDropTransitionOnTrack: (transition: Transition, trackId: string, dropLeftPx: number) => void;
+  onDropSceneOnTrack: (sceneId: string, sceneName: string, variableSchema: any[], trackId: string, dropLeftPx: number) => void;
   onDeleteTransition: (transitionId: string) => void;
   getAllScrubbers: () => ScrubberState[];
   expandTimeline: () => boolean;
@@ -37,6 +40,7 @@ interface TimelineTracksProps {
   onUngroupScrubber: (scrubberId: string) => void;
   onMoveToMediaBin?: (scrubberId: string) => void;
   onAssignVariable?: (scrubberId: string, variableName: string | null) => void;
+  scenes?: Scene[];
 }
 
 export const TimelineTracks: React.FC<TimelineTracksProps> = ({
@@ -51,6 +55,7 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
   onBeginScrubberTransform,
   onDropOnTrack,
   onDropTransitionOnTrack,
+  onDropSceneOnTrack,
   onDeleteTransition,
   getAllScrubbers,
   expandTimeline,
@@ -62,6 +67,7 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
   onUngroupScrubber,
   onMoveToMediaBin,
   onAssignVariable,
+  scenes = [],
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -198,6 +204,15 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                 // Handle transition drop
                 if (data.type === "transition") {
                   onDropTransitionOnTrack(data, trackId, dropXInTimeline);
+                } else if (data.type === "scene") {
+                  // Handle scene drop
+                  onDropSceneOnTrack(
+                    data.sceneId,
+                    data.sceneName,
+                    data.variableSchema,
+                    trackId,
+                    dropXInTimeline
+                  );
                 } else {
                   // Handle media item drop
                   try {
@@ -214,8 +229,8 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                   {/* Track background */}
                   <div
                     className={`absolute w-full border-b border-border/30 transition-colors ${trackIndex % 2 === 0
-                        ? "bg-timeline-track hover:bg-timeline-track/80"
-                        : "bg-timeline-background hover:bg-muted/20"
+                      ? "bg-timeline-track hover:bg-timeline-track/80"
+                      : "bg-timeline-background hover:bg-muted/20"
                       }`}
                     style={{
                       top: `0px`,
@@ -284,6 +299,7 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                     pixelsPerSecond={pixelsPerSecond}
                     onBeginTransform={onBeginScrubberTransform}
                     onAssignVariable={onAssignVariable}
+                    scene={scrubber.mediaType === "scene" ? scenes.find(s => s.id === (scrubber as any).sceneId) : undefined}
                   />
                 );
               })}
