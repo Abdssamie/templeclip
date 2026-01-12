@@ -7,6 +7,13 @@ import {
 } from "~/components/timeline/types";
 import { apiUrl } from "~/utils/api";
 
+// TODO: NEXT DEV SPRINT - Integrate Remotion Lambda rendering
+// - Use @remotion/lambda package for AWS-based rendering
+// - Pass R2 public URLs for media assets (scrubber.publicUrl)
+// - Create export records in database after successful render
+// - Upload rendered video to R2
+// See: /home/abdssamie/.gemini/antigravity/brain/88f04e95-d9fb-4015-a20b-9636c5a5521a/r2_architecture.md
+
 export const useRenderer = () => {
   const [isRendering, setIsRendering] = useState(false);
   const [renderStatus, setRenderStatus] = useState<string>("");
@@ -136,8 +143,7 @@ export const useRenderer = () => {
             setRenderStatus("Error: Render timeout - try a shorter video");
           } else if (error.response?.status === 500) {
             setRenderStatus(
-              `Error: ${
-                error.response.data?.message || "Server error during rendering"
+              `Error: ${error.response.data?.message || "Server error during rendering"
               }`
             );
           } else if (error.request) {
