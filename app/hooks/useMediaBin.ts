@@ -169,6 +169,40 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
     item: MediaBinItem;
   } | null>(null);
 
+  // Download from R2 and cache as browser blob
+  const downloadAndCacheBlob = useCallback(async (assetId: string, r2Key: string) => {
+    try {
+      const res = await fetch(apiUrl(`/api/r2/presigned-download?assetId=${assetId}`, false, true), {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        console.error("Failed to get presigned download URL");
+        return;
+      }
+
+      const { presignedUrl } = await res.json();
+      const fileResponse = await fetch(presignedUrl);
+      if (!fileResponse.ok) {
+        console.error("Failed to download from R2");
+        return;
+      }
+
+      const blob = await fileResponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      setMediaBinItems((prev) =>
+        prev.map((item) =>
+          item.assetId === assetId ? { ...item, mediaUrlLocal: blobUrl } : item
+        )
+      );
+
+      console.log(`Cached blob for asset ${assetId}`);
+    } catch (error) {
+      console.error("Error downloading and caching blob:", error);
+    }
+  }, []);
+
   // Hydrate existing assets for the logged-in user and project
   useEffect(() => {
     const loadAssets = async () => {
@@ -194,12 +228,15 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
             if (/(jpg|jpeg|png|gif|bmp|webp)$/.test(ext)) return "image";
             return "image";
           })(),
-          mediaUrlLocal: null, // restored assets will use remote URL; local may be null
+          mediaUrlLocal: null, // Will be populated after R2 download
           mediaUrlRemote: a.mediaUrlRemote,
           durationInSeconds: a.durationInSeconds ?? 0,
           media_width: a.width ?? 0,
           media_height: a.height ?? 0,
           text: null,
+          assetId: a.id,
+          r2Key: a.r2_key || null,
+          publicUrl: a.r2_key ? `${process.env.R2_PUBLIC_URL || ""}/${a.r2_key}` : null,
           isUploading: false,
           uploadProgress: null,
           left_transition_id: null,
@@ -212,6 +249,14 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
           return [...textItems, ...items];
         });
         console.log(`Loaded ${items.length} assets for project ${projectId || "default"}`);
+
+        // Download and cache blobs for R2 assets
+        for (const item of items) {
+          if (item.r2Key && item.assetId) {
+            // Download in background (don't await to avoid blocking)
+            downloadAndCacheBlob(item.assetId, item.r2Key);
+          }
+        }
       } catch (e) {
         console.error("Failed to load assets", e);
       } finally {
@@ -222,7 +267,7 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
   }, [projectId]);
 
   const handleAddMediaToBin = useCallback(async (file: File) => {
-    const id = generateUUID();
+    const tempId = generateUUID();
     const name = file.name;
     let mediaType: "video" | "image" | "audio";
     if (file.type.startsWith("video/")) mediaType = "video";
@@ -236,6 +281,7 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
     console.log("Adding to bin:", name, mediaType);
 
     try {
+      // Create local blob URL for immediate preview
       const mediaUrlLocal = URL.createObjectURL(file);
 
       console.log(`Parsing ${mediaType} file for metadata...`);
@@ -244,15 +290,18 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
 
       // Add item to media bin immediately with upload progress tracking
       const newItem: MediaBinItem = {
-        id,
+        id: tempId,
         name,
         mediaType,
         mediaUrlLocal,
-        mediaUrlRemote: null, // Will be set after successful upload
+        mediaUrlRemote: null,
         durationInSeconds: metadata.durationInSeconds ?? 0,
         media_width: metadata.width,
         media_height: metadata.height,
         text: null,
+        assetId: null, // Will be set after R2 upload
+        r2Key: null,
+        publicUrl: null,
         isUploading: true,
         uploadProgress: 0,
         left_transition_id: null,
@@ -261,56 +310,74 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
       };
       setMediaBinItems((prev) => [...prev, newItem]);
 
+      // Upload to R2 using useR2Upload hook
       const formData = new FormData();
       formData.append("media", file);
 
-      console.log("Uploading file to server...");
-      // Use the new authenticated upload endpoint with project support
-      const uploadResponse = await axios.post(apiUrl("/api/assets/upload", false, true), formData, {
-        headers: {
-          "X-Media-Width": metadata.width.toString(),
-          "X-Media-Height": metadata.height.toString(),
-          "X-Media-Duration": (metadata.durationInSeconds || 0).toString(),
-          "X-Original-Name": file.name,
-          "X-Project-Id": projectId || "",
+      console.log("Uploading file to R2...");
+
+      // Use R2 presigned upload
+      const presignedRes = await axios.post(
+        apiUrl("/api/r2/presigned-upload", false, true),
+        {
+          filename: file.name,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          width: metadata.width,
+          height: metadata.height,
+          durationSeconds: metadata.durationInSeconds || 0,
+          projectId: projectId || "",
         },
-        withCredentials: true, // Include authentication cookies
+        { withCredentials: true }
+      );
+
+      const { presignedUrl, assetId, r2Key } = presignedRes.data;
+
+      // Upload directly to R2
+      await axios.put(presignedUrl, file, {
+        headers: { "Content-Type": file.type },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             console.log(`Upload progress: ${percentCompleted}%`);
-
-            // Update upload progress in the media bin
             setMediaBinItems((prev) =>
-              prev.map((item) => (item.id === id ? { ...item, uploadProgress: percentCompleted } : item)),
+              prev.map((item) => (item.id === tempId ? { ...item, uploadProgress: percentCompleted } : item))
             );
           }
         },
       });
 
-      const uploadResult = uploadResponse.data;
-      console.log("Upload successful:", uploadResult);
+      // Confirm upload
+      await axios.post(
+        apiUrl("/api/r2/confirm-upload", false, true),
+        { assetId },
+        { withCredentials: true }
+      );
 
-      // Update item with successful upload result and remove progress tracking
+      console.log("Upload successful to R2");
+
+      // Update item with R2 data
       setMediaBinItems((prev) =>
         prev.map((item) =>
-          item.id === id
+          item.id === tempId
             ? {
-                ...item,
-                id: uploadResult.asset.id, // Use the database-generated asset ID
-                mediaUrlRemote: uploadResult.asset.mediaUrlRemote,
-                isUploading: false,
-                uploadProgress: null,
-              }
-            : item,
-        ),
+              ...item,
+              id: assetId,
+              assetId,
+              r2Key,
+              publicUrl: `${process.env.R2_PUBLIC_URL || ""}/${r2Key}`,
+              isUploading: false,
+              uploadProgress: null,
+            }
+            : item
+        )
       );
     } catch (error) {
       console.error("Error adding media to bin:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
       // Remove the failed item from media bin
-      setMediaBinItems((prev) => prev.filter((item) => item.id !== id));
+      setMediaBinItems((prev) => prev.filter((item) => item.id !== tempId));
 
       throw new Error(`Failed to add media: ${errorMessage}`);
     }
@@ -343,6 +410,9 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
         mediaUrlLocal: null,
         mediaUrlRemote: null,
         durationInSeconds: 0, // interesting code. i wish i remembered why i did this. maybe there's a better way.
+        assetId: null, // Text items don't have assets
+        r2Key: null,
+        publicUrl: null,
         isUploading: false,
         uploadProgress: null,
         left_transition_id: null,
@@ -367,6 +437,9 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
             mediaType: "text" as const,
             mediaUrlLocal: null,
             mediaUrlRemote: null,
+            assetId: null,
+            r2Key: null,
+            publicUrl: null,
             isUploading: false,
             uploadProgress: null,
           }),
@@ -443,6 +516,9 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
         media_width: 0, // Audio doesn't have visual dimensions
         media_height: 0,
         text: null,
+        assetId: cloneResult.asset?.id || null,
+        r2Key: null, // TODO: Will be populated when R2 is integrated
+        publicUrl: null,
         isUploading: false,
         uploadProgress: null,
         left_transition_id: null,
@@ -505,6 +581,9 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
       media_width: groupedScrubber.media_width || 0,
       media_height: groupedScrubber.media_height || 0,
       text: null,
+      assetId: groupedScrubber.assetId || null,
+      r2Key: groupedScrubber.r2Key || null,
+      publicUrl: groupedScrubber.publicUrl || null,
       isUploading: false,
       uploadProgress: null,
       left_transition_id: null,

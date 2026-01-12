@@ -539,6 +539,9 @@ export const useTimeline = () => {
         text: item.text,
         groupped_scrubbers: processedGroupedScrubbers,
         sourceMediaBinId: item.id,
+        assetId: item.assetId,
+        r2Key: item.r2Key,
+        publicUrl: item.publicUrl,
 
         // the following are the properties of the scrubber in <Player>
         left_player: 100, // default values TODO: maybe move it to the center of the <Player> initially
@@ -628,6 +631,9 @@ export const useTimeline = () => {
         text: null,
         groupped_scrubbers: null,
         sourceMediaBinId: "", // Logic specific to media bin items
+        assetId: null,
+        r2Key: null,
+        publicUrl: null,
         uploadProgress: 0,
         isUploading: false,
 

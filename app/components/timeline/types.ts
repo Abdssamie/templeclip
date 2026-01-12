@@ -7,6 +7,10 @@ export interface BaseScrubber {
   media_width: number; // width of the media in pixels
   media_height: number; // height of the media in pixels
 
+  // R2 storage (optional - only used for Remotion Lambda rendering with CSV imports)
+  r2Key?: string | null; // R2 object key (e.g., "userId/assetId/filename.mp4")
+  publicUrl?: string | null; // Public R2 URL for rendering (e.g., "https://bucket.tripixir.com/userId/assetId/filename.mp4")
+
   text: TextProperties | null;
   groupped_scrubbers: ScrubberState[] | null; // null for not grouped
   //  groupped_scrubber_transitions: Transition[] | null; // null for no transitions / not groupped scrubbers [this is written to help with deepcopy]
@@ -42,6 +46,7 @@ export interface TextProperties {
 export interface MediaBinItem extends BaseScrubber {
   name: string;
   durationInSeconds: number; // For media, to calculate initial width
+  assetId?: string | null; // Database asset ID (optional - only for R2 assets)
 
   // Upload tracking properties
   uploadProgress: number | null; // 0-100, null when upload complete
