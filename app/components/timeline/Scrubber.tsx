@@ -1,10 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { DEFAULT_TRACK_HEIGHT, type ScrubberState, type Transition, type Scene } from "./types";
-import { Trash2, Group, Ungroup, Archive, Braces, Edit3 } from "lucide-react";
+import { Trash2, Group, Ungroup, Archive, Braces } from "lucide-react";
 import { Modal } from "~/components/ui/modal";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { VariableValueEditor } from "~/components/scenes/VariableValueEditor";
+
 
 // something something for the css not gonna bother with it for now
 export interface SnapConfig {
@@ -75,8 +75,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
   const [variableNameInput, setVariableNameInput] = useState("");
   const [variableNameError, setVariableNameError] = useState<string | null>(null);
 
-  // Scene Variable Editor State
-  const [isSceneVariableEditorOpen, setIsSceneVariableEditorOpen] = useState(false);
+
 
   const MINIMUM_WIDTH = 20;
 
@@ -462,22 +461,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
     setVariableNameError(null);
   }, []);
 
-  const handleOpenSceneVariableEditor = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsSceneVariableEditorOpen(true);
-    setContextMenu({ visible: false, x: 0, y: 0 });
-  }, []);
 
-  const handleSaveSceneVariables = useCallback((values: Record<string, string>) => {
-    // Cast to any to access specific scene properties since ScrubberState is a union
-    const sceneScrubber = scrubber as any;
-    onUpdate({
-      ...scrubber,
-      variableValues: values,
-    } as ScrubberState);
-    setIsSceneVariableEditorOpen(false);
-  }, [scrubber, onUpdate]);
 
   // Add click outside listener for context menu
   useEffect(() => {
@@ -652,16 +636,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
             </button>
           )}
 
-          {/* Edit Scene Variables option */}
-          {scrubber.mediaType === "scene" && (
-            <button
-              className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-muted transition-colors text-left text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
-              onClick={handleOpenSceneVariableEditor}
-            >
-              <Edit3 className="h-3 w-3" />
-              Edit Variables
-            </button>
-          )}
+
 
           <button
             className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-muted transition-colors text-left text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
@@ -707,19 +682,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
         </div>
       </Modal>
 
-      {/* Scene Variable Value Editor */}
-      {
-        scrubber.mediaType === "scene" && (
-          <VariableValueEditor
-            open={isSceneVariableEditorOpen}
-            onClose={() => setIsSceneVariableEditorOpen(false)}
-            sceneName={scene?.name || scrubber.name}
-            variableSchema={scene?.variableSchema || []}
-            currentValues={(scrubber as any).variableValues || {}}
-            onSave={handleSaveSceneVariables}
-          />
-        )
-      }
+
     </>
   );
 };
