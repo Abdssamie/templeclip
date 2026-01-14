@@ -163,6 +163,11 @@ export interface TimelineDataItem {
     sceneId?: string;
     variableValues?: Record<string, string>;
     sceneName?: string;
+
+    // R2 storage and variables
+    r2Key?: string | null;
+    publicUrl?: string | null;
+    variableName?: string | null;
   })[];
   transitions: { [id: string]: Transition };
 }
