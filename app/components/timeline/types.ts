@@ -158,6 +158,11 @@ export interface TimelineDataItem {
     // for video scrubbers (and audio in the future)
     trimBefore: number | null; // in frames
     trimAfter: number | null; // in frames
+
+    // Scene specific properties
+    sceneId?: string;
+    variableValues?: Record<string, string>;
+    sceneName?: string;
   })[];
   transitions: { [id: string]: Transition };
 }

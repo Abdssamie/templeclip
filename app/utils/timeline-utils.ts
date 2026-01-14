@@ -44,7 +44,12 @@ export function transformTimelineToData(
                 // Scene specific properties
                 sceneId: (scrubber as any).sceneId,
                 sceneName: (scrubber as any).sceneName,
-                variableValues: (scrubber as any).variableValues
+                variableValues: (scrubber as any).variableValues,
+
+                // R2 storage and variables
+                r2Key: scrubber.r2Key,
+                publicUrl: scrubber.publicUrl,
+                variableName: scrubber.variableName,
             });
         }
     }
