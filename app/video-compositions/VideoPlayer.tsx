@@ -224,7 +224,7 @@ export function TimelineComposition({
       }
       case "scene": {
         // Find the scene definition
-        const sceneId = (scrubber as any).sceneId;
+        const sceneId = scrubber.sceneId;
         const scene = scenes.find((s) => s.id === sceneId);
 
         if (!scene) {
@@ -239,7 +239,7 @@ export function TimelineComposition({
         // Merge parent variables with scene instance variables
         // Parent variables take precedence if there's conflict, but typically scene variables 
         // are scoped to the instance. Using a simple merge here.
-        const instanceVariables = (scrubber as any).variableValues || {};
+        const instanceVariables = scrubber.variableValues || {};
         const mergedVariables = { ...(variableValues || {}), ...instanceVariables };
 
         // Calculate duration in seconds, handling both type variants
