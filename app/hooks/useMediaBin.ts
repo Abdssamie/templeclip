@@ -192,9 +192,7 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
       const blobUrl = URL.createObjectURL(blob);
 
       setMediaBinItems((prev) =>
-        prev.map((item) =>
-          item.assetId === assetId ? { ...item, mediaUrlLocal: blobUrl } : item
-        )
+        prev.map((item) => (item.assetId === assetId ? { ...item, mediaUrlLocal: blobUrl } : item)),
       );
 
       console.log(`Cached blob for asset ${assetId}`);
@@ -236,7 +234,7 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
           text: null,
           assetId: a.id,
           r2Key: a.r2_key || null,
-          publicUrl: a.r2_key ? `${process.env.R2_PUBLIC_URL || ""}/${a.r2_key}` : null,
+          publicUrl: a.r2_key ? `/r2/${a.r2_key}` : null,
           isUploading: false,
           uploadProgress: null,
           left_transition_id: null,
@@ -266,122 +264,121 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
     loadAssets();
   }, [projectId]);
 
-  const handleAddMediaToBin = useCallback(async (file: File) => {
-    const tempId = generateUUID();
-    const name = file.name;
-    let mediaType: "video" | "image" | "audio";
-    if (file.type.startsWith("video/")) mediaType = "video";
-    else if (file.type.startsWith("image/")) mediaType = "image";
-    else if (file.type.startsWith("audio/")) mediaType = "audio";
-    else {
-      alert("Unsupported file type. Please select a video or image.");
-      return;
-    }
+  const handleAddMediaToBin = useCallback(
+    async (file: File) => {
+      const tempId = generateUUID();
+      const name = file.name;
+      let mediaType: "video" | "image" | "audio";
+      if (file.type.startsWith("video/")) mediaType = "video";
+      else if (file.type.startsWith("image/")) mediaType = "image";
+      else if (file.type.startsWith("audio/")) mediaType = "audio";
+      else {
+        alert("Unsupported file type. Please select a video or image.");
+        return;
+      }
 
-    console.log("Adding to bin:", name, mediaType);
+      console.log("Adding to bin:", name, mediaType);
 
-    try {
-      // Create local blob URL for immediate preview
-      const mediaUrlLocal = URL.createObjectURL(file);
+      try {
+        // Create local blob URL for immediate preview
+        const mediaUrlLocal = URL.createObjectURL(file);
 
-      console.log(`Parsing ${mediaType} file for metadata...`);
-      const metadata = await getMediaMetadata(file, mediaType);
-      console.log("Media metadata:", metadata);
+        console.log(`Parsing ${mediaType} file for metadata...`);
+        const metadata = await getMediaMetadata(file, mediaType);
+        console.log("Media metadata:", metadata);
 
-      // Add item to media bin immediately with upload progress tracking
-      const newItem: MediaBinItem = {
-        id: tempId,
-        name,
-        mediaType,
-        mediaUrlLocal,
-        mediaUrlRemote: null,
-        durationInSeconds: metadata.durationInSeconds ?? 0,
-        media_width: metadata.width,
-        media_height: metadata.height,
-        text: null,
-        assetId: null, // Will be set after R2 upload
-        r2Key: null,
-        publicUrl: null,
-        isUploading: true,
-        uploadProgress: 0,
-        left_transition_id: null,
-        right_transition_id: null,
-        groupped_scrubbers: null,
-      };
-      setMediaBinItems((prev) => [...prev, newItem]);
+        // Add item to media bin immediately with upload progress tracking
+        const newItem: MediaBinItem = {
+          id: tempId,
+          name,
+          mediaType,
+          mediaUrlLocal,
+          mediaUrlRemote: null,
+          durationInSeconds: metadata.durationInSeconds ?? 0,
+          media_width: metadata.width,
+          media_height: metadata.height,
+          text: null,
+          assetId: null, // Will be set after R2 upload
+          r2Key: null,
+          publicUrl: null,
+          isUploading: true,
+          uploadProgress: 0,
+          left_transition_id: null,
+          right_transition_id: null,
+          groupped_scrubbers: null,
+        };
+        setMediaBinItems((prev) => [...prev, newItem]);
 
-      // Upload to R2 using useR2Upload hook
-      const formData = new FormData();
-      formData.append("media", file);
+        // Upload to R2 using useR2Upload hook
+        const formData = new FormData();
+        formData.append("media", file);
 
-      console.log("Uploading file to R2...");
+        console.log("Uploading file to R2...");
 
-      // Use R2 presigned upload
-      const presignedRes = await axios.post(
-        apiUrl("/api/r2/presigned-upload", false, true),
-        {
-          filename: file.name,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          width: metadata.width,
-          height: metadata.height,
-          durationSeconds: metadata.durationInSeconds || 0,
-          projectId: projectId || "",
-        },
-        { withCredentials: true }
-      );
+        // Use R2 presigned upload
+        const presignedRes = await axios.post(
+          apiUrl("/api/r2/presigned-upload", false, true),
+          {
+            filename: file.name,
+            mimeType: file.type,
+            sizeBytes: file.size,
+            width: metadata.width,
+            height: metadata.height,
+            durationSeconds: metadata.durationInSeconds || 0,
+            projectId: projectId || "",
+          },
+          { withCredentials: true },
+        );
 
-      const { presignedUrl, assetId, r2Key } = presignedRes.data;
+        const { presignedUrl, assetId, r2Key } = presignedRes.data;
 
-      // Upload directly to R2
-      await axios.put(presignedUrl, file, {
-        headers: { "Content-Type": file.type },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            console.log(`Upload progress: ${percentCompleted}%`);
-            setMediaBinItems((prev) =>
-              prev.map((item) => (item.id === tempId ? { ...item, uploadProgress: percentCompleted } : item))
-            );
-          }
-        },
-      });
-
-      // Confirm upload
-      await axios.post(
-        apiUrl("/api/r2/confirm-upload", false, true),
-        { assetId },
-        { withCredentials: true }
-      );
-
-      console.log("Upload successful to R2");
-
-      // Update item with R2 data
-      setMediaBinItems((prev) =>
-        prev.map((item) =>
-          item.id === tempId
-            ? {
-              ...item,
-              id: assetId,
-              assetId,
-              r2Key,
-              publicUrl: `${process.env.R2_PUBLIC_URL || ""}/${r2Key}`,
-              isUploading: false,
-              uploadProgress: null,
+        // Upload directly to R2
+        await axios.put(presignedUrl, file, {
+          headers: { "Content-Type": file.type },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              console.log(`Upload progress: ${percentCompleted}%`);
+              setMediaBinItems((prev) =>
+                prev.map((item) => (item.id === tempId ? { ...item, uploadProgress: percentCompleted } : item)),
+              );
             }
-            : item
-        )
-      );
-    } catch (error) {
-      console.error("Error adding media to bin:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          },
+        });
 
-      // Remove the failed item from media bin
-      setMediaBinItems((prev) => prev.filter((item) => item.id !== tempId));
+        // Confirm upload
+        await axios.post(apiUrl("/api/r2/confirm-upload", false, true), { assetId }, { withCredentials: true });
 
-      throw new Error(`Failed to add media: ${errorMessage}`);
-    }
-  }, []);
+        console.log("Upload successful to R2");
+
+        // Update item with R2 data
+        setMediaBinItems((prev) =>
+          prev.map((item) =>
+            item.id === tempId
+              ? {
+                  ...item,
+                  id: assetId,
+                  assetId,
+                  r2Key,
+                  publicUrl: `/r2/${r2Key}`,
+                  isUploading: false,
+                  uploadProgress: null,
+                }
+              : item,
+          ),
+        );
+      } catch (error) {
+        console.error("Error adding media to bin:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+        // Remove the failed item from media bin
+        setMediaBinItems((prev) => prev.filter((item) => item.id !== tempId));
+
+        throw new Error(`Failed to add media: ${errorMessage}`);
+      }
+    },
+    [projectId],
+  );
 
   const handleAddTextToBin = useCallback(
     (
