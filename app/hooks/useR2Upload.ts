@@ -155,7 +155,7 @@ export function useR2Upload(options?: UseR2UploadOptions) {
                 });
 
                 return result;
-            } catch (error: any) {
+            } catch (error: unkown) {
                 const errorMessage = axios.isCancel(error)
                     ? "Upload cancelled"
                     : error.response?.data?.error || error.message || "Upload failed";

@@ -42,6 +42,7 @@ function getPool(): Pool {
 // Schema creation is handled by SQL migrations in /migrations.
 
 export async function insertAsset(params: {
+  id?: string;
   userId: string;
   projectId?: string | null;
   originalName: string;
@@ -51,13 +52,15 @@ export async function insertAsset(params: {
   width?: number | null;
   height?: number | null;
   durationSeconds?: number | null;
+  r2Key?: string | null;
+  r2Bucket?: string | null;
 }): Promise<AssetRecord> {
   const client = await getPool().connect();
   try {
-    const id = crypto.randomUUID();
+    const id = params.id || crypto.randomUUID();
     const { rows } = await client.query<AssetRecord>(
-      `insert into assets (id, user_id, project_id, original_name, storage_key, mime_type, size_bytes, width, height, duration_seconds)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      `insert into assets (id, user_id, project_id, original_name, storage_key, mime_type, size_bytes, width, height, duration_seconds, r2_key, r2_bucket)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
        returning *`,
       [
         id,
@@ -70,6 +73,8 @@ export async function insertAsset(params: {
         params.width ?? null,
         params.height ?? null,
         params.durationSeconds ?? null,
+        params.r2Key ?? null,
+        params.r2Bucket ?? null,
       ],
     );
     return rows[0];

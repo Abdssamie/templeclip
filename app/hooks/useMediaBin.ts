@@ -169,38 +169,6 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
     item: MediaBinItem;
   } | null>(null);
 
-  // Download from R2 and cache as browser blob
-  const downloadAndCacheBlob = useCallback(async (assetId: string, r2Key: string) => {
-    try {
-      const res = await fetch(apiUrl(`/api/r2/presigned-download?assetId=${assetId}`, false, true), {
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        console.error("Failed to get presigned download URL");
-        return;
-      }
-
-      const { presignedUrl } = await res.json();
-      const fileResponse = await fetch(presignedUrl);
-      if (!fileResponse.ok) {
-        console.error("Failed to download from R2");
-        return;
-      }
-
-      const blob = await fileResponse.blob();
-      const blobUrl = URL.createObjectURL(blob);
-
-      setMediaBinItems((prev) =>
-        prev.map((item) => (item.assetId === assetId ? { ...item, mediaUrlLocal: blobUrl } : item)),
-      );
-
-      console.log(`Cached blob for asset ${assetId}`);
-    } catch (error) {
-      console.error("Error downloading and caching blob:", error);
-    }
-  }, []);
-
   // Hydrate existing assets for the logged-in user and project
   useEffect(() => {
     const loadAssets = async () => {
@@ -247,14 +215,6 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
           return [...textItems, ...items];
         });
         console.log(`Loaded ${items.length} assets for project ${projectId || "default"}`);
-
-        // Download and cache blobs for R2 assets
-        for (const item of items) {
-          if (item.r2Key && item.assetId) {
-            // Download in background (don't await to avoid blocking)
-            downloadAndCacheBlob(item.assetId, item.r2Key);
-          }
-        }
       } catch (e) {
         console.error("Failed to load assets", e);
       } finally {
