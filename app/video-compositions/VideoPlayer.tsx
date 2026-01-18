@@ -47,6 +47,70 @@ export type VideoPlayerProps = {
   scenes?: Scene[];
 };
 
+const MediaMissingFallback = () => (
+  <div
+    style={{
+      width: "100%",
+      height: "100%",
+      backgroundColor: "#1f1f1f",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#e5e5e5",
+      border: "1px solid #333",
+      boxSizing: "border-box",
+    }}>
+    <div style={{ fontSize: "24px", marginBottom: "8px" }}>⚠️</div>
+    <div style={{ fontSize: "12px", fontFamily: "sans-serif" }}>Media Missing</div>
+  </div>
+);
+
+const SafeImg = (props: React.ComponentProps<typeof Img>) => {
+  const [error, setError] = React.useState(false);
+  if (error) return <MediaMissingFallback />;
+  return (
+    <Img
+      {...props}
+      onError={(e) => {
+        console.warn(`[VideoPlayer] Image load failed: ${props.src}`);
+        if (props.onError) props.onError(e);
+        setError(true);
+      }}
+    />
+  );
+};
+
+const SafeVideo = (props: React.ComponentProps<typeof Video>) => {
+  const [error, setError] = React.useState(false);
+  if (error) return <MediaMissingFallback />;
+  return (
+    <Video
+      {...props}
+      onError={(e) => {
+        console.warn(`[VideoPlayer] Video load failed: ${props.src}`);
+        if (props.onError) props.onError(e);
+        setError(true);
+      }}
+    />
+  );
+};
+
+const SafeAudio = (props: React.ComponentProps<typeof Audio>) => {
+  const [error, setError] = React.useState(false);
+  if (error) return null;
+  return (
+    <Audio
+      {...props}
+      onError={(e) => {
+        console.warn(`[VideoPlayer] Audio load failed: ${props.src}`);
+        if (props.onError) props.onError(e);
+        setError(true);
+      }}
+    />
+  );
+};
+
 export function TimelineComposition({
   timelineData,
   isRendering,
@@ -156,7 +220,7 @@ export function TimelineComposition({
               width: scrubber.width_player,
               height: scrubber.height_player,
             }}>
-            <Img src={imageUrl!} />
+            <SafeImg src={imageUrl!} />
           </AbsoluteFill>
         );
         break;
@@ -174,7 +238,7 @@ export function TimelineComposition({
               width: scrubber.width_player,
               height: scrubber.height_player,
             }}>
-            <Video
+            <SafeVideo
               src={videoUrl!}
               trimBefore={scrubber.trimBefore || undefined}
               trimAfter={scrubber.trimAfter || undefined}
@@ -196,7 +260,7 @@ export function TimelineComposition({
               width: scrubber.width_player,
               height: scrubber.height_player,
             }}>
-            <Audio
+            <SafeAudio
               src={audioUrl!}
               trimBefore={scrubber.trimBefore || undefined}
               trimAfter={scrubber.trimAfter || undefined}

@@ -107,13 +107,20 @@ export async function loader({ request }: { request: Request }) {
     }
 
     if (asset.r2_key) {
-      const signedUrl = await getPresignedDownloadUrl(asset.r2_key);
-      return redirect(signedUrl);
+      try {
+        const signedUrl = await getPresignedDownloadUrl(asset.r2_key);
+        return redirect(signedUrl);
+      } catch (error) {
+        console.error("Failed to generate presigned URL:", error);
+        return new Response(JSON.stringify({ error: "Failed to retrieve asset URL" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Fallback: If no R2 key, we can't serve it as we removed local storage.
-    // Return 404 or maybe a placeholder?
-    return new Response(JSON.stringify({ error: "Asset not available (not in R2)" }), {
+    return new Response(JSON.stringify({ error: "Asset resource is missing or was deleted" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
