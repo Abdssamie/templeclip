@@ -38,7 +38,6 @@ import {
   Cloud,
 } from "lucide-react";
 
-import { TbBrandDiscord } from "react-icons/tb";
 import { GlowingEffect } from "~/components/ui/glowing-effect";
 import { FollowerPointerCard } from "../components/ui/following-pointer";
 

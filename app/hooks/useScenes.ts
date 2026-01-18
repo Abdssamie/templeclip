@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { Scene, SceneVariableSchema, ElasticityRule, TimelineState } from "~/components/timeline/types";
+import type { Scene, TemplateVariable , ElasticityRule, TimelineState } from "~/components/timeline/types";
 import { generateUUID } from "~/utils/uuid";
 import { toast } from "sonner";
 
@@ -91,7 +91,7 @@ export const useScenes = (projectId: string) => {
                 name?: string;
                 description?: string;
                 timeline?: TimelineState;
-                variableSchema?: SceneVariableSchema[];
+                variableSchema?: TemplateVariable [];
                 elasticityRules?: ElasticityRule[];
             },
         ) => {

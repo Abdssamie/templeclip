@@ -39,7 +39,7 @@ export interface TextProperties {
   color: string;
   textAlign: "left" | "center" | "right";
   fontWeight: "normal" | "bold";
-  template: "normal" | "glassy" | null;          // template uses tiktok style pages. null for normal text. templates might override the text properties.
+  template: "normal" | "glassy" | null; // template uses tiktok style pages. null for normal text. templates might override the text properties.
 }
 
 // state of the scrubber in the media bin
@@ -51,6 +51,11 @@ export interface MediaBinItem extends BaseScrubber {
   // Upload tracking properties
   uploadProgress: number | null; // 0-100, null when upload complete
   isUploading: boolean; // True while upload is in progress
+
+  // Scene properties (optional)
+  sceneId?: string;
+  variables?: Record<string, string>;
+  sceneName?: string;
 }
 
 // state of the scrubber in the timeline
@@ -82,23 +87,18 @@ export interface TrackState {
 export interface TemplateVariable {
   id: string;
   name: string;
-  type: "text" | "image" | "video" | "audio";
+  mediaType: "text" | "image" | "video" | "audio" | "groupped_scrubber";
+  scrubberId: string;
   defaultValue?: string;
+  required?: boolean;
 }
 
 // Scene instance scrubber (references a scene in the timeline)
 export interface SceneInstanceScrubber extends BaseScrubber {
   mediaType: "scene";
   sceneId: string; // Reference to the scene definition
-  variableValues: Record<string, string>; // Variable values for this instance
+  variables: Record<string, string>; // Variable values for this instance
   sceneName?: string; // Cached scene name for display
-}
-
-// Scene variable schema (defines what variables a scene expects)
-export interface SceneVariableSchema {
-  name: string; // e.g., "voiceover_audio", "headline"
-  type: "text" | "image" | "video" | "audio";
-  required: boolean;
 }
 
 // Elasticity rule (defines how scrubbers stretch during rendering)
@@ -113,7 +113,7 @@ export interface Scene {
   name: string;
   description?: string;
   timeline: TimelineState; // The actual timeline structure
-  variableSchema: SceneVariableSchema[]; // What variables this scene expects
+  variableSchema: TemplateVariable[]; // What variables this scene expects
   elasticityRules: ElasticityRule[]; // How scrubbers should stretch
   createdAt?: string;
   updatedAt?: string;
@@ -141,24 +141,26 @@ export interface TimelineState {
   variables?: TemplateVariable[];
 }
 
+export type ScrubberRuntimeProps = {
+  startTime: number;
+  endTime: number;
+  duration: number; // TODO: this should be calculated from the start and end time, for trimming, it should be done with the trimmer. This should be refactored later.
+  trackIndex: number; // track index in the timeline
+
+  // the following are the properties of the scrubber in <Player>
+  left_player: number;
+  top_player: number;
+  width_player: number;
+  height_player: number;
+
+  // for video scrubbers (and audio in the future)
+  trimBefore: number | null; // in frames
+  trimAfter: number | null; // in frames
+};
+
 // the most important type. gets converted to json and gets rendered. Everything else is just a helper type. (formed using getTimelineData() in useTimeline.ts from timelinestate)
 export interface TimelineDataItem {
-  scrubbers: (BaseScrubber & {
-    startTime: number;
-    endTime: number;
-    duration: number; // TODO: this should be calculated from the start and end time, for trimming, it should be done with the trimmer. This should be refactored later.
-    trackIndex: number; // track index in the timeline
-
-    // the following are the properties of the scrubber in <Player>
-    left_player: number;
-    top_player: number;
-    width_player: number;
-    height_player: number;
-
-    // for video scrubbers (and audio in the future)
-    trimBefore: number | null; // in frames
-    trimAfter: number | null; // in frames
-  })[];
+  scrubbers: ((BaseScrubber & ScrubberRuntimeProps) | (SceneInstanceScrubber & ScrubberRuntimeProps))[];
   transitions: { [id: string]: Transition };
 }
 

@@ -1,16 +1,15 @@
-import { auth } from "~/lib/auth.server";
-import { createProject, getProjectById, listProjectsByUser, deleteProjectById, getProjectScenes, updateProjectScenes } from "~/lib/projects.repo";
-import { listAssetsByUser, getAssetById, softDeleteAsset } from "~/lib/assets.repo";
 import fs from "fs";
 import path from "path";
-import { loadTimeline, saveTimeline, loadProjectState, saveProjectState } from "~/lib/timeline.store";
 import type { MediaBinItem, TimelineState } from "~/components/timeline/types";
-import { z } from "zod";
+import { listAssetsByUser, softDeleteAsset } from "~/lib/assets.repo";
+import { auth } from "~/lib/auth.server";
+import { createProject, deleteProjectById, getProjectById, getProjectScenes, listProjectsByUser, updateProjectScenes } from "~/lib/projects.repo";
+import { loadProjectState, saveProjectState } from "~/lib/timeline.store";
 import {
-  ProjectsResponseSchema,
-  ProjectStateResponseSchema,
-  CreateProjectBodySchema,
-  PatchProjectBodySchema,
+    CreateProjectBodySchema,
+    PatchProjectBodySchema,
+    ProjectsResponseSchema,
+    ProjectStateResponseSchema,
 } from "~/schemas";
 
 async function requireUserId(request: Request): Promise<string> {
@@ -172,9 +171,9 @@ export async function action({ request }: { request: Request }) {
     const body = await request.json().catch(() => ({}));
     const parsed = PatchProjectBodySchema.safeParse(body);
     const name: string | undefined = parsed.success ? parsed.data.name : undefined;
-    const timeline: TimelineState | undefined = (parsed.success ? parsed.data.timeline : undefined) as any;
-    const textBinItems: MediaBinItem[] | undefined = (parsed.success ? parsed.data.textBinItems : undefined) as any;
-    const scenes: unknown[] | undefined = (parsed.success ? parsed.data.scenes : undefined) as any;
+    const timeline: TimelineState | undefined = parsed.success ? parsed.data.timeline : undefined;
+    const textBinItems: MediaBinItem[] | undefined = (parsed.success ? parsed.data.textBinItems : undefined);
+    const scenes: unknown[] | undefined = (parsed.success ? parsed.data.scenes : undefined);
     if (!name && !timeline && !textBinItems && !scenes)
       return new Response(JSON.stringify({ error: "No changes" }), {
         status: 400,

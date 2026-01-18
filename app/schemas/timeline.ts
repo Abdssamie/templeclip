@@ -38,6 +38,9 @@ export const MediaBinItemSchema = MediaBinBaseSchema.extend({
   durationInSeconds: z.number().nonnegative(),
   uploadProgress: z.number().nullable(),
   isUploading: z.boolean(),
+  sceneId: z.string().optional(),
+  variables: z.record(z.string(), z.string()).optional(),
+  sceneName: z.string().optional(),
 });
 
 export const ScrubberStateSchema = MediaBinItemSchema.extend({
@@ -104,9 +107,7 @@ export const SceneCompositionSchema = z.object({
       durationFrames: z.number().int().positive(),
     }),
   ),
-  testVariables: z
-    .record(z.string(), z.record(z.string(), z.string()))
-    .optional(),
+  testVariables: z.record(z.string(), z.record(z.string(), z.string())).optional(),
 });
 
 export type TimelineStateParsed = z.infer<typeof TimelineStateSchema>;

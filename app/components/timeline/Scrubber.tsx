@@ -502,7 +502,7 @@ export const Scrubber: React.FC<ScrubberProps> = ({
         </div>
 
         {/* Media name - for text scrubbers, render {{ varName }} as visual badges */}
-        <div className="absolute top-0.5 left-6 right-2 text-xs truncate items-center opacity-90 pointer-events-none flex items-center gap-0.5 overflow-hidden">
+        <div className="absolute top-0.5 left-6 right-2 text-xs truncate items-center opacity-90 pointer-events-none flex gap-0.5 overflow-hidden">
           {scrubber.mediaType === "text" && scrubber.name ? (
             // Parse and render variable references as badges
             (() => {
@@ -511,13 +511,13 @@ export const Scrubber: React.FC<ScrubberProps> = ({
                 const match = part.match(/\{\{\s*(\w+)\s*\}\}/);
                 if (match) {
                   return (
-                    <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-500/90 text-white shrink-0">
+                    <span key={`${part}`} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-500/90 text-white shrink-0">
                       <Braces className="h-2.5 w-2.5" />
                       {match[1]}
                     </span>
                   );
                 }
-                return part ? <span key={i} className="truncate">{part}</span> : null;
+                return part ? <span key={`${part}`} className="truncate">{part}</span> : null;
               });
             })()
           ) : (

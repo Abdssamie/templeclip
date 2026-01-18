@@ -19,7 +19,7 @@ import {
     AlertDialogAction,
     AlertDialogCancel,
 } from "~/components/ui/alert-dialog";
-import { Plus, X, Edit3, Trash2, Home, Clapperboard, MonitorPlay } from "lucide-react";
+import { Plus, Edit3, MonitorPlay, Clapperboard } from "lucide-react";
 import type { Scene } from "~/components/timeline/types";
 import { cn } from "~/lib/utils";
 

@@ -59,6 +59,7 @@ import {
   type TrackState,
   type ScrubberState,
   type TimelineState,
+  type TemplateVariable,
 } from "~/components/timeline/types";
 import { useNavigate, useParams, useLocation } from "react-router";
 import { KimuLogo } from "~/components/ui/KimuLogo";
@@ -165,7 +166,6 @@ export default function TimelineEditor() {
   // Scene management
   const {
     scenes,
-    loading: scenesLoading,
     loadScenes,
     createScene,
     updateScene,
@@ -184,24 +184,11 @@ export default function TimelineEditor() {
       const currentScene = scenes.find(s => s.id === activeSceneId);
       if (!currentScene) return;
 
-      const currentVariables = getVariablesFromTimeline();
+      const newSchema = getVariablesFromTimeline();
+      const oldSchema = currentScene.variableSchema;
 
-      // Transform to schema format
-      const newSchema = currentVariables.reduce<any[]>((acc, v) => {
-        if (!acc.find((i: any) => i.name === v.name)) {
-          acc.push({
-            name: v.name,
-            type: v.mediaType,
-            label: v.name
-          });
-        }
-        return acc;
-      }, []);
-
-      // Check for changes (simple length check + name check to avoid unnecessary excessive updates)
-      // A more robust check might stringify, but this is okay for now. 
-      // Actually, JSON stringify is safest.
-      const hasChanged = JSON.stringify(newSchema) !== JSON.stringify(currentScene.variableSchema);
+      const hasChanged = newSchema.length !== oldSchema.length ||
+        newSchema.some((v, i) => v.name !== oldSchema[i].name || v.mediaType !== oldSchema[i].mediaType);
 
       if (hasChanged) {
         console.log("Syncing scene variables:", newSchema);

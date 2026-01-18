@@ -12,6 +12,7 @@ import {
   type TimelineDataItem,
   type Transition,
   FPS,
+  type TemplateVariable,
 } from "../components/timeline/types";
 import { generateUUID } from "../utils/uuid";
 import { toast } from "sonner";
@@ -318,7 +319,8 @@ export const useTimeline = () => {
       // Show feedback message
       if (connectedTransitionIds.length > 0) {
         toast.success(
-          `Scrubber and ${connectedTransitionIds.length} connected transition${connectedTransitionIds.length > 1 ? "s" : ""
+          `Scrubber and ${connectedTransitionIds.length} connected transition${
+            connectedTransitionIds.length > 1 ? "s" : ""
           } deleted`,
         );
       } else {
@@ -383,8 +385,10 @@ export const useTimeline = () => {
       if (scrubbersToDelete.length > 0) {
         if (connectedTransitionIds.length > 0) {
           toast.success(
-            `${scrubbersToDelete.length} scrubber${scrubbersToDelete.length > 1 ? "s" : ""
-            } and ${connectedTransitionIds.length} connected transition${connectedTransitionIds.length > 1 ? "s" : ""
+            `${scrubbersToDelete.length} scrubber${
+              scrubbersToDelete.length > 1 ? "s" : ""
+            } and ${connectedTransitionIds.length} connected transition${
+              connectedTransitionIds.length > 1 ? "s" : ""
             } deleted`,
           );
         } else {
@@ -502,7 +506,7 @@ export const useTimeline = () => {
       widthPx = Math.max(20, widthPx);
 
       const targetTrackIndex = timeline.tracks.findIndex((t) => t.id === trackId);
-      if (targetTrackIndex === -1) return '';
+      if (targetTrackIndex === -1) return "";
 
       // For text elements, provide default dimensions if they're 0
       const playerWidth =
@@ -570,10 +574,10 @@ export const useTimeline = () => {
           tracks: prev.tracks.map((track) =>
             track.id === trackId
               ? {
-                ...track,
-                scrubbers: [...track.scrubbers, newScrubber],
-                transitions: [...track.transitions, ...clonedTransitions],
-              }
+                  ...track,
+                  scrubbers: [...track.scrubbers, newScrubber],
+                  transitions: [...track.transitions, ...clonedTransitions],
+                }
               : track,
           ),
         }));
@@ -596,11 +600,11 @@ export const useTimeline = () => {
     (
       sceneId: string,
       sceneName: string,
-      variableSchema: any[],
+      variableSchema: TemplateVariable[],
       trackId: string,
       dropLeftPx: number,
       compositionWidth: number,
-      compositionHeight: number
+      compositionHeight: number,
     ): string => {
       snapshotTimeline();
       console.log("Dropped scene", sceneName, "on track", trackId, "at", dropLeftPx, "px");
@@ -611,7 +615,7 @@ export const useTimeline = () => {
       const widthPx = defaultDurationSec * pixelsPerSecond;
 
       const targetTrackIndex = timeline.tracks.findIndex((t) => t.id === trackId);
-      if (targetTrackIndex === -1) return '';
+      if (targetTrackIndex === -1) return "";
 
       const newScrubber: ScrubberState = {
         id: generateUUID(),
@@ -620,7 +624,7 @@ export const useTimeline = () => {
         mediaType: "scene",
         sceneId: sceneId,
         sceneName: sceneName,
-        variableValues: {}, // Initialize with empty values
+        variables: {}, // Initialize with empty values
         mediaUrlLocal: null,
         mediaUrlRemote: null,
         y: targetTrackIndex,
@@ -1210,9 +1214,9 @@ export const useTimeline = () => {
           mouseCenter < collidingCenter
             ? { ...updatedScrubber, left: Math.max(0, snapToLeft) }
             : {
-              ...updatedScrubber,
-              left: Math.min(snapToRight, timelineWidth - updatedScrubber.width),
-            };
+                ...updatedScrubber,
+                left: Math.min(snapToRight, timelineWidth - updatedScrubber.width),
+              };
 
         if (!checkCollisionWithTrack(preferredScrubber, updatedScrubber.id)) {
           return preferredScrubber;
@@ -1221,9 +1225,9 @@ export const useTimeline = () => {
           const alternateScrubber =
             mouseCenter < collidingCenter
               ? {
-                ...updatedScrubber,
-                left: Math.min(snapToRight, timelineWidth - updatedScrubber.width),
-              }
+                  ...updatedScrubber,
+                  left: Math.min(snapToRight, timelineWidth - updatedScrubber.width),
+                }
               : { ...updatedScrubber, left: Math.max(0, snapToLeft) };
 
           if (!checkCollisionWithTrack(alternateScrubber, updatedScrubber.id)) {
@@ -1531,9 +1535,7 @@ export const useTimeline = () => {
         tracks: prev.tracks.map((track) => ({
           ...track,
           scrubbers: track.scrubbers.map((scrubber) =>
-            scrubber.id === scrubberId
-              ? { ...scrubber, variableName: variableName || null }
-              : scrubber
+            scrubber.id === scrubberId ? { ...scrubber, variableName: variableName || null } : scrubber,
           ),
         })),
       }));
@@ -1547,13 +1549,13 @@ export const useTimeline = () => {
   );
 
   const getVariablesFromTimeline = useCallback(() => {
-    const variables: { name: string; type: string; scrubberId: string; mediaType: string }[] = [];
+    const variables: TemplateVariable[] = [];
     for (const track of timeline.tracks) {
       for (const scrubber of track.scrubbers) {
-        if (scrubber.variableName) {
+        if (scrubber.variableName && scrubber.mediaType !== "groupped_scrubber" && scrubber.mediaType !== "scene") {
           variables.push({
+            id: scrubber.id,
             name: scrubber.variableName,
-            type: scrubber.mediaType,
             scrubberId: scrubber.id,
             mediaType: scrubber.mediaType,
           });

@@ -1,11 +1,6 @@
 import { Player, type PlayerRef } from "@remotion/player";
 import { Sequence, AbsoluteFill, Img, Video, Audio } from "remotion";
-import {
-  linearTiming,
-  springTiming,
-  TransitionSeries,
-  type TransitionPresentation,
-} from "@remotion/transitions";
+import { linearTiming, springTiming, TransitionSeries, type TransitionPresentation } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { iris } from "@remotion/transitions/iris";
 import { wipe } from "@remotion/transitions/wipe";
@@ -64,9 +59,7 @@ export function TimelineComposition({
   scenes = [],
 }: TimelineCompositionProps) {
   // Resolve pixels per second based on rendering mode
-  const resolvedPixelsPerSecond = typeof getPixelsPerSecond === "function"
-    ? getPixelsPerSecond()
-    : getPixelsPerSecond;
+  const resolvedPixelsPerSecond = typeof getPixelsPerSecond === "function" ? getPixelsPerSecond() : getPixelsPerSecond;
   // Get all transitions from timelineData
   const allTransitions = timelineData[0].transitions;
 
@@ -111,13 +104,11 @@ export function TimelineComposition({
 
   // Step 2: Sort scrubbers within each track by startTime
   for (const trackIndex in trackGroups) {
-    trackGroups[parseInt(trackIndex)].sort(
-      (a, b) => a.content.startTime - b.content.startTime
-    );
+    trackGroups[parseInt(trackIndex)].sort((a, b) => a.content.startTime - b.content.startTime);
   }
 
   // Helper function to create media content
-  const createMediaContent = (scrubber: TimelineDataItem['scrubbers'][0] | ScrubberState): React.ReactNode => {
+  const createMediaContent = (scrubber: TimelineDataItem["scrubbers"][0] | ScrubberState): React.ReactNode => {
     let content: React.ReactNode = null;
 
     switch (scrubber.mediaType) {
@@ -131,26 +122,21 @@ export function TimelineComposition({
               height: scrubber.height_player,
               justifyContent: "center",
               alignItems: "center",
-            }}
-          >
+            }}>
             <div
               style={{
                 textAlign: scrubber.text?.textAlign || "center",
                 width: "100%",
-              }}
-            >
+              }}>
               <p
                 style={{
                   color: scrubber.text?.color || "white",
-                  fontSize: scrubber.text?.fontSize
-                    ? `${scrubber.text.fontSize}px`
-                    : "48px",
+                  fontSize: scrubber.text?.fontSize ? `${scrubber.text.fontSize}px` : "48px",
                   fontFamily: scrubber.text?.fontFamily || "Arial, sans-serif",
                   fontWeight: scrubber.text?.fontWeight || "normal",
                   margin: 0,
                   padding: "20px",
-                }}
-              >
+                }}>
                 {resolveVariable(scrubber.text?.textContent || "", scrubber.variableName)}
               </p>
             </div>
@@ -169,8 +155,7 @@ export function TimelineComposition({
               top: scrubber.top_player,
               width: scrubber.width_player,
               height: scrubber.height_player,
-            }}
-          >
+            }}>
             <Img src={imageUrl!} />
           </AbsoluteFill>
         );
@@ -188,8 +173,7 @@ export function TimelineComposition({
               top: scrubber.top_player,
               width: scrubber.width_player,
               height: scrubber.height_player,
-            }}
-          >
+            }}>
             <Video
               src={videoUrl!}
               trimBefore={scrubber.trimBefore || undefined}
@@ -211,8 +195,7 @@ export function TimelineComposition({
               top: scrubber.top_player,
               width: scrubber.width_player,
               height: scrubber.height_player,
-            }}
-          >
+            }}>
             <Audio
               src={audioUrl!}
               trimBefore={scrubber.trimBefore || undefined}
@@ -224,7 +207,15 @@ export function TimelineComposition({
       }
       case "scene": {
         // Find the scene definition
-        const sceneId = (scrubber as any).sceneId;
+        // We need to use sceneId from the scrubber, not the scrubber's own id
+        // The type guard ensures we can access sceneId safely
+        const sceneId = "sceneId" in scrubber ? scrubber.sceneId : null;
+
+        if (!sceneId) {
+          console.warn(`Scene scrubber ${scrubber.id} missing sceneId`);
+          return null;
+        }
+
         const scene = scenes.find((s) => s.id === sceneId);
 
         if (!scene) {
@@ -237,15 +228,13 @@ export function TimelineComposition({
         const sceneTimelineData = transformTimelineToData(scene.timeline, PIXELS_PER_SECOND);
 
         // Merge parent variables with scene instance variables
-        // Parent variables take precedence if there's conflict, but typically scene variables 
+        // Parent variables take precedence if there's conflict, but typically scene variables
         // are scoped to the instance. Using a simple merge here.
-        const instanceVariables = (scrubber as any).variableValues || {};
+        const instanceVariables = "variables" in scrubber ? scrubber.variables : {};
         const mergedVariables = { ...(variableValues || {}), ...instanceVariables };
 
         // Calculate duration in seconds, handling both type variants
-        const durationInSeconds = 'duration' in scrubber
-          ? scrubber.duration
-          : scrubber.width / resolvedPixelsPerSecond;
+        const durationInSeconds = "duration" in scrubber ? scrubber.duration : scrubber.width / resolvedPixelsPerSecond;
 
         content = (
           <AbsoluteFill
@@ -255,17 +244,16 @@ export function TimelineComposition({
               width: scrubber.width_player,
               height: scrubber.height_player,
               overflow: "hidden", // Clip content to scene bounds
-            }}
-          >
+            }}>
             <Sequence durationInFrames={Math.round(durationInSeconds * FPS)}>
               <TimelineComposition
                 timelineData={sceneTimelineData}
                 // Recursive call for nested structure
                 isRendering={isRendering}
                 selectedItem={null} // Don't select items inside nested scenes
-                setSelectedItem={() => { }} // No-op for nested selection
+                setSelectedItem={() => {}} // No-op for nested selection
                 timeline={scene.timeline} // Pass scene timeline
-                handleUpdateScrubber={() => { }} // No-op for nested updates (read-only)
+                handleUpdateScrubber={() => {}} // No-op for nested updates (read-only)
                 getPixelsPerSecond={PIXELS_PER_SECOND} // Use standard PPS for internal relative sizing
                 variableValues={mergedVariables}
                 scenes={scenes} // Pass scene context down for deeper recursion
@@ -339,19 +327,14 @@ export function TimelineComposition({
         transitionSeriesElements.push(
           <TransitionSeries.Sequence
             key={`gap-start-${trackIndex}`}
-            durationInFrames={Math.max(Math.round(scrubber.startTime * FPS), 1)}
-          >
+            durationInFrames={Math.max(Math.round(scrubber.startTime * FPS), 1)}>
             <AbsoluteFill style={{ backgroundColor: "transparent" }} />
-          </TransitionSeries.Sequence>
+          </TransitionSeries.Sequence>,
         );
       }
 
       // Add left transition if exists (only for first scrubber)
-      if (
-        isFirstScrubber &&
-        scrubber.left_transition_id &&
-        allTransitions[scrubber.left_transition_id]
-      ) {
+      if (isFirstScrubber && scrubber.left_transition_id && allTransitions[scrubber.left_transition_id]) {
         const transition = allTransitions[scrubber.left_transition_id];
         transitionSeriesElements.push(
           <TransitionSeries.Transition
@@ -359,7 +342,7 @@ export function TimelineComposition({
             // @ts-expect-error - NOTE: typescript is being stoopid. The fix is nasty so let it be. it is not an error.
             presentation={getTransitionPresentation(transition)}
             timing={getTransitionTiming(transition)}
-          />
+          />,
         );
       }
 
@@ -371,7 +354,10 @@ export function TimelineComposition({
         // Calculate the bounds of the group to determine total duration
         const groupLeftmost = Math.min(...groupedScrubbers.map((s) => s.left));
         const groupRightmost = Math.max(...groupedScrubbers.map((s) => s.left + s.width));
-        const groupDurationInFrames = Math.max(Math.round(((groupRightmost - groupLeftmost) / resolvedPixelsPerSecond) * FPS), 1);
+        const groupDurationInFrames = Math.max(
+          Math.round(((groupRightmost - groupLeftmost) / resolvedPixelsPerSecond) * FPS),
+          1,
+        );
 
         // Collect all child sequences to render in parallel
         const parallelSequences: React.ReactNode[] = [];
@@ -380,12 +366,17 @@ export function TimelineComposition({
           const grouppedScrubber = groupedScrubbers[j];
 
           // Calculate relative timing within the group
-          const relativeStartFrame = Math.round(((grouppedScrubber.left - groupLeftmost) / resolvedPixelsPerSecond) * FPS);
-          const childDurationInFrames = Math.max(Math.round((grouppedScrubber.width / resolvedPixelsPerSecond) * FPS), 1);
+          const relativeStartFrame = Math.round(
+            ((grouppedScrubber.left - groupLeftmost) / resolvedPixelsPerSecond) * FPS,
+          );
+          const childDurationInFrames = Math.max(
+            Math.round((grouppedScrubber.width / resolvedPixelsPerSecond) * FPS),
+            1,
+          );
 
           // Use stack approach to handle potential nesting
           const scrubberStack: Array<{
-            scrubber: TimelineDataItem['scrubbers'][0] | ScrubberState;
+            scrubber: TimelineDataItem["scrubbers"][0] | ScrubberState;
             keyPrefix: string;
             from: number;
             duration: number;
@@ -410,7 +401,9 @@ export function TimelineComposition({
 
               for (let k = nestedScrubbers.length - 1; k >= 0; k--) {
                 const nestedScrubber = nestedScrubbers[k];
-                const nestedRelativeStart = Math.round(((nestedScrubber.left - nestedLeftmost) / resolvedPixelsPerSecond) * FPS);
+                const nestedRelativeStart = Math.round(
+                  ((nestedScrubber.left - nestedLeftmost) / resolvedPixelsPerSecond) * FPS,
+                );
                 const nestedDuration = Math.max(Math.round((nestedScrubber.width / resolvedPixelsPerSecond) * FPS), 1);
 
                 scrubberStack.push({
@@ -425,13 +418,9 @@ export function TimelineComposition({
               const mediaContent = createMediaContent(currentScrubber);
               if (mediaContent) {
                 parallelSequences.push(
-                  <Sequence
-                    key={keyPrefix}
-                    from={from}
-                    durationInFrames={duration}
-                  >
+                  <Sequence key={keyPrefix} from={from} durationInFrames={duration}>
                     {mediaContent}
-                  </Sequence>
+                  </Sequence>,
                 );
               }
             }
@@ -440,19 +429,14 @@ export function TimelineComposition({
 
         // Wrap all parallel sequences in a single TransitionSeries.Sequence
         transitionSeriesElements.push(
-          <TransitionSeries.Sequence
-            key={`group-${scrubber.id}`}
-            durationInFrames={groupDurationInFrames}
-          >
-            <AbsoluteFill>
-              {parallelSequences}
-            </AbsoluteFill>
-          </TransitionSeries.Sequence>
+          <TransitionSeries.Sequence key={`group-${scrubber.id}`} durationInFrames={groupDurationInFrames}>
+            <AbsoluteFill>{parallelSequences}</AbsoluteFill>
+          </TransitionSeries.Sequence>,
         );
       } else {
         // Process regular scrubbers using the stack approach
         const scrubberStack: Array<{
-          scrubber: TimelineDataItem['scrubbers'][0] | ScrubberState;
+          scrubber: TimelineDataItem["scrubbers"][0] | ScrubberState;
           keyPrefix: string;
           durationCalculation: () => number;
         }> = [];
@@ -460,7 +444,7 @@ export function TimelineComposition({
         scrubberStack.push({
           scrubber: scrubber,
           keyPrefix: `scrubber-${scrubber.id}`,
-          durationCalculation: () => Math.max(Math.round(scrubber.duration * FPS), 1)
+          durationCalculation: () => Math.max(Math.round(scrubber.duration * FPS), 1),
         });
 
         // Process the stack
@@ -475,7 +459,8 @@ export function TimelineComposition({
               scrubberStack.push({
                 scrubber: nestedScrubber,
                 keyPrefix: `${keyPrefix}-nested-${nestedScrubber.id}`,
-                durationCalculation: () => Math.max(Math.round((nestedScrubber.width / resolvedPixelsPerSecond) * FPS), 1)
+                durationCalculation: () =>
+                  Math.max(Math.round((nestedScrubber.width / resolvedPixelsPerSecond) * FPS), 1),
               });
             }
           } else {
@@ -483,12 +468,9 @@ export function TimelineComposition({
             const mediaContent = createMediaContent(currentScrubber);
             if (mediaContent) {
               transitionSeriesElements.push(
-                <TransitionSeries.Sequence
-                  key={keyPrefix}
-                  durationInFrames={durationCalculation()}
-                >
+                <TransitionSeries.Sequence key={keyPrefix} durationInFrames={durationCalculation()}>
                   {mediaContent}
-                </TransitionSeries.Sequence>
+                </TransitionSeries.Sequence>,
               );
             }
           }
@@ -496,10 +478,7 @@ export function TimelineComposition({
       }
 
       // Add right transition if exists
-      if (
-        scrubber.right_transition_id &&
-        allTransitions[scrubber.right_transition_id]
-      ) {
+      if (scrubber.right_transition_id && allTransitions[scrubber.right_transition_id]) {
         const transition = allTransitions[scrubber.right_transition_id];
         transitionSeriesElements.push(
           <TransitionSeries.Transition
@@ -507,7 +486,7 @@ export function TimelineComposition({
             // @ts-expect-error - NOTE: typescript is being stoopid. The fix is nasty so let it be. it is not an error.
             presentation={getTransitionPresentation(transition)}
             timing={getTransitionTiming(transition)}
-          />
+          />,
         );
       }
 
@@ -522,10 +501,9 @@ export function TimelineComposition({
           transitionSeriesElements.push(
             <TransitionSeries.Sequence
               key={`gap-${trackIndex}-${i}`}
-              durationInFrames={Math.max(Math.round(gapDuration * FPS), 1)}
-            >
+              durationInFrames={Math.max(Math.round(gapDuration * FPS), 1)}>
               <AbsoluteFill style={{ backgroundColor: "transparent" }} />
-            </TransitionSeries.Sequence>
+            </TransitionSeries.Sequence>,
           );
         }
       }
@@ -534,12 +512,9 @@ export function TimelineComposition({
     // Create the track sequence
     if (transitionSeriesElements.length > 0) {
       trackElements.push(
-        <Sequence
-          key={`track-${trackIndex}`}
-          durationInFrames={totalDurationInFrames}
-        >
+        <Sequence key={`track-${trackIndex}`} durationInFrames={totalDurationInFrames}>
           <TransitionSeries>{transitionSeriesElements}</TransitionSeries>
-        </Sequence>
+        </Sequence>,
       );
     }
   }
@@ -597,10 +572,7 @@ export function VideoPlayer({
     let maxHeight = 0;
     for (const item of timelineData) {
       for (const scrubber of item.scrubbers) {
-        if (
-          scrubber.media_height !== null &&
-          scrubber.media_height > maxHeight
-        ) {
+        if (scrubber.media_height !== null && scrubber.media_height > maxHeight) {
           maxHeight = scrubber.media_height;
         }
       }
@@ -609,10 +581,8 @@ export function VideoPlayer({
   }
 
   // Guard against invalid dimensions (e.g., user typed 0, only-audio timelines)
-  const safeWidth =
-    !compositionWidth || compositionWidth <= 0 ? 1920 : compositionWidth;
-  const safeHeight =
-    !compositionHeight || compositionHeight <= 0 ? 1080 : compositionHeight;
+  const safeWidth = !compositionWidth || compositionWidth <= 0 ? 1920 : compositionWidth;
+  const safeHeight = !compositionHeight || compositionHeight <= 0 ? 1080 : compositionHeight;
   const safeDuration = Math.max(1, durationInFrames || 1);
 
   return (
