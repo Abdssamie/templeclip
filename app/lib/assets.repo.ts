@@ -14,6 +14,9 @@ export type AssetRecord = {
   duration_seconds: number | null;
   created_at: string;
   deleted_at: string | null;
+  r2_bucket: string | null;
+  r2_key: string | null;
+  upload_status: string | null;
 };
 
 let pool: Pool | null = null;
@@ -30,7 +33,7 @@ function getPool(): Pool {
       // keep as-is
     }
     pool = new Pool({
-      connectionString
+      connectionString,
     });
   }
   return pool;
@@ -67,7 +70,7 @@ export async function insertAsset(params: {
         params.width ?? null,
         params.height ?? null,
         params.durationSeconds ?? null,
-      ]
+      ],
     );
     return rows[0];
   } finally {
@@ -75,10 +78,7 @@ export async function insertAsset(params: {
   }
 }
 
-export async function listAssetsByUser(
-  userId: string,
-  projectId: string | null
-): Promise<AssetRecord[]> {
+export async function listAssetsByUser(userId: string, projectId: string | null): Promise<AssetRecord[]> {
   const client = await getPool().connect();
   try {
     const query =
@@ -96,26 +96,20 @@ export async function listAssetsByUser(
 export async function getAssetById(id: string): Promise<AssetRecord | null> {
   const client = await getPool().connect();
   try {
-    const { rows } = await client.query<AssetRecord>(
-      `select * from assets where id = $1 and deleted_at is null`,
-      [id]
-    );
+    const { rows } = await client.query<AssetRecord>(`select * from assets where id = $1 and deleted_at is null`, [id]);
     return rows[0] ?? null;
   } finally {
     client.release();
   }
 }
 
-export async function softDeleteAsset(
-  id: string,
-  userId: string
-): Promise<void> {
+export async function softDeleteAsset(id: string, userId: string): Promise<void> {
   const client = await getPool().connect();
   try {
-    await client.query(
-      `update assets set deleted_at = now() where id = $1 and user_id = $2 and deleted_at is null`,
-      [id, userId]
-    );
+    await client.query(`update assets set deleted_at = now() where id = $1 and user_id = $2 and deleted_at is null`, [
+      id,
+      userId,
+    ]);
   } finally {
     client.release();
   }

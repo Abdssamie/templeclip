@@ -82,8 +82,8 @@ export async function loader({ request }: { request: Request }) {
       duration_seconds: r.duration_seconds,
       durationInSeconds: r.duration_seconds, // camelCase for frontend
       created_at: r.created_at,
-      mediaUrlRemote: `/api/assets/${r.id}/raw`,
-      // Remove public fullUrl - all access must go through authenticated API
+      r2_key: r.r2_key,
+      mediaUrlRemote: r.r2_key ? `/r2/${r.r2_key}` : `/api/assets/${r.id}/raw`,
     }));
     // Response validation schema
     const payload = { assets: items };
