@@ -6,6 +6,7 @@ import path from "path";
 import { loadTimeline, saveTimeline, loadProjectState, saveProjectState } from "~/lib/timeline.store";
 import type { MediaBinItem, TimelineState } from "~/components/timeline/types";
 import { z } from "zod";
+import { getPool } from "~/lib/db.server";
 import {
   ProjectsResponseSchema,
   ProjectStateResponseSchema,
@@ -184,30 +185,13 @@ export async function action({ request }: { request: Request }) {
     // inline update using pg (reuse pool via repo)
     // quick import avoided; execute with small query here
 
-    // @ts-ignore
-    const { Pool } = await import("pg");
-    const rawDbUrl = process.env.DATABASE_URL || "";
-    let connectionString = rawDbUrl;
-    try {
-      const u = new URL(rawDbUrl);
-      u.search = "";
-      connectionString = u.toString();
-    } catch {
-      console.error("Invalid database URL");
-    }
-    const pool = new Pool({
-      connectionString
-    });
-    try {
-      if (name) {
-        await pool.query(`update projects set name = $1, updated_at = now() where id = $2 and user_id = $3`, [
-          name,
-          id,
-          userId,
-        ]);
-      }
-    } finally {
-      await pool.end();
+    const pool = getPool();
+    if (name) {
+      await pool.query(`update projects set name = $1, updated_at = now() where id = $2 and user_id = $3`, [
+        name,
+        id,
+        userId,
+      ]);
     }
     if (timeline || textBinItems) {
       const prev = await loadProjectState(id);
