@@ -89,32 +89,35 @@ export function TimelineComposition({
     return value;
   };
 
-  // Step 1: Group scrubbers by trackIndex
-  const trackGroups: {
-    [trackIndex: number]: {
-      content: TimelineDataItem["scrubbers"][0];
-      type: string;
-    }[];
-  } = {};
+  // Step 1 & 2: Group scrubbers by trackIndex and sort them
+  const trackGroups = React.useMemo(() => {
+    const groups: {
+      [trackIndex: number]: {
+        content: TimelineDataItem["scrubbers"][0];
+        type: string;
+      }[];
+    } = {};
 
-  for (const timelineItem of timelineData) {
-    for (const scrubber of timelineItem.scrubbers) {
-      if (!trackGroups[scrubber.trackIndex]) {
-        trackGroups[scrubber.trackIndex] = [];
+    for (const timelineItem of timelineData) {
+      for (const scrubber of timelineItem.scrubbers) {
+        if (!groups[scrubber.trackIndex]) {
+          groups[scrubber.trackIndex] = [];
+        }
+        groups[scrubber.trackIndex].push({
+          content: scrubber,
+          type: "scrubber",
+        });
       }
-      trackGroups[scrubber.trackIndex].push({
-        content: scrubber,
-        type: "scrubber",
-      });
     }
-  }
 
-  // Step 2: Sort scrubbers within each track by startTime
-  for (const trackIndex in trackGroups) {
-    trackGroups[parseInt(trackIndex)].sort(
-      (a, b) => a.content.startTime - b.content.startTime
-    );
-  }
+    // Step 2: Sort scrubbers within each track by startTime
+    for (const trackIndex in groups) {
+      groups[parseInt(trackIndex)].sort(
+        (a, b) => a.content.startTime - b.content.startTime
+      );
+    }
+    return groups;
+  }, [timelineData]);
 
   // Helper function to create media content
   const createMediaContent = (scrubber: TimelineDataItem['scrubbers'][0] | ScrubberState): React.ReactNode => {
