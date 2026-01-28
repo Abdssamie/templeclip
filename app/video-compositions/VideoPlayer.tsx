@@ -108,14 +108,10 @@ export function TimelineComposition({
       }
     }
 
-    // Step 2: Sort scrubbers within each track by startTime
-    for (const trackIndex in groups) {
-      groups[parseInt(trackIndex)].sort(
-        (a, b) => a.content.startTime - b.content.startTime
-      );
-    }
-    return groups;
-  }, [timelineData]);
+  // Step 2: Sort scrubbers within each track by startTime
+  for (const trackIndex in trackGroups) {
+    trackGroups[parseInt(trackIndex)].sort((a, b) => a.content.startTime - b.content.startTime);
+  }
 
   // Helper function to create media content
   const createMediaContent = (scrubber: TimelineDataItem["scrubbers"][0] | ScrubberState): React.ReactNode => {
