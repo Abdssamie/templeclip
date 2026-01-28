@@ -29,8 +29,6 @@ const bundleLocation = await bundle({
   },
 });
 
-console.log(bundleLocation);
-
 // Ensure output directory exists
 ensureDirectoryExists("out");
 
