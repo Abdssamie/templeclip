@@ -27,7 +27,7 @@ interface TimelineTracksProps {
   onUpdateScrubber: (updatedScrubber: ScrubberState) => void;
   onDeleteScrubber?: (scrubberId: string) => void;
   onBeginScrubberTransform?: () => void;
-  onDropOnTrack: (item: MediaBinItem, trackId: string, dropLeftPx: number) => void;
+  onDropOnTrack: (item: MediaBinItem, trackId: string, dropLeftPx: number, compositionWidth: number, compositionHeight: number) => void;
   onDropTransitionOnTrack: (transition: Transition, trackId: string, dropLeftPx: number) => void;
   onDropSceneOnTrack: (sceneId: string, sceneName: string, variableSchema: any[], trackId: string, dropLeftPx: number, compositionWidth: number, compositionHeight: number) => void;
   onDeleteTransition: (transitionId: string) => void;
@@ -235,7 +235,13 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                   // Handle media item drop
                   try {
                     const validated = MediaBinItemSchema.parse(data);
-                    onDropOnTrack(validated as unknown as MediaBinItem, trackId, dropXInTimeline);
+                    onDropOnTrack(
+                      validated as unknown as MediaBinItem,
+                      trackId,
+                      dropXInTimeline,
+                      compositionWidth,
+                      compositionHeight
+                    );
                   } catch {
                     // Ignore invalid payloads
                   }

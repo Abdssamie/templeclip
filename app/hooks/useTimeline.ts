@@ -485,7 +485,7 @@ export const useTimeline = () => {
   );
 
   const handleDropOnTrack = useCallback(
-    (item: MediaBinItem, trackId: string, dropLeftPx: number): string => {
+    (item: MediaBinItem, trackId: string, dropLeftPx: number, compositionWidth: number, compositionHeight: number): string => {
       snapshotTimeline();
       console.log("Dropped", item.name, "on track", trackId, "at", dropLeftPx, "px");
 
@@ -544,8 +544,8 @@ export const useTimeline = () => {
         publicUrl: item.publicUrl,
 
         // the following are the properties of the scrubber in <Player>
-        left_player: 100, // default values TODO: maybe move it to the center of the <Player> initially
-        top_player: 100,
+        left_player: (compositionWidth - playerWidth) / 2,
+        top_player: (compositionHeight - playerHeight) / 2,
         width_player: playerWidth,
         height_player: playerHeight,
         is_dragging: false,
