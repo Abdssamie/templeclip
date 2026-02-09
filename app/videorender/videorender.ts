@@ -275,15 +275,21 @@ app.get("/health", (req, res) => {
 
 app.post("/render", async (req, res) => {
   try {
+    // Validate required fields
+    if (!req.body.timelineData || !req.body.compositionWidth || !req.body.compositionHeight) {
+      res.status(400).json({ error: "Missing required fields: timelineData, compositionWidth, compositionHeight" });
+      return;
+    }
+
     // Get input props from POST body
     const inputProps = {
       timelineData: req.body.timelineData,
       durationInFrames: req.body.durationInFrames,
       compositionWidth: req.body.compositionWidth,
       compositionHeight: req.body.compositionHeight,
-      getPixelsPerSecond: req.body.getPixelsPerSecond,
-      variableValues: req.body.variableValues,
-      scenes: req.body.scenes,
+      getPixelsPerSecond: req.body.getPixelsPerSecond || 100,
+      variableValues: req.body.variableValues || {},
+      scenes: req.body.scenes || [],
       isRendering: true,
     };
 
