@@ -87,6 +87,17 @@ export async function getProjectScenes(id: string): Promise<Scene[]> {
   }
 }
 
+export async function getProjectSceneById(projectId: string, sceneId: string): Promise<Scene | null> {
+  const client = await getPool().connect();
+  try {
+    const { rows } = await client.query<{ scenes: Scene[] }>(`select scenes from projects where id = $1`, [projectId]);
+    const scenes = rows[0]?.scenes ?? [];
+    return scenes.find((s) => s.id === sceneId) ?? null;
+  } finally {
+    client.release();
+  }
+}
+
 export async function updateProjectScenes(id: string, userId: string, scenes: Scene[]): Promise<boolean> {
   const client = await getPool().connect();
   try {

@@ -1,4 +1,4 @@
-import { auth } from "~/lib/auth.server";
+import { requireUserId } from "~/lib/auth.utils";
 import { z } from "zod";
 import { AssetsResponseSchema, RegisterAssetBodySchema, CloneAssetBodySchema } from "~/schemas";
 import { insertAsset, listAssetsByUser, getAssetById, softDeleteAsset } from "~/lib/assets.repo";
@@ -6,52 +6,6 @@ import path from "path";
 import { deleteFromR2, copyInR2, getPresignedDownloadUrl, generateR2Key, R2_BUCKET_NAME } from "~/lib/r2-client";
 import { redirect } from "react-router";
 import crypto from "crypto";
-
-async function requireUserId(request: Request): Promise<string> {
-  // Try Better Auth runtime API first
-  try {
-    // @ts-ignore - runtime API may not be typed
-    const session = await auth.api?.getSession?.({ headers: request.headers });
-    const userId: string | undefined = session?.user?.id ?? session?.session?.userId;
-    if (userId) return String(userId);
-  } catch {
-    console.error("Failed to get session");
-  }
-
-  // Fallback: call /api/auth/session with forwarded cookies
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:5173";
-  const proto = request.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
-  const base = `${proto}://${host}`;
-  const cookie = request.headers.get("cookie") || "";
-  const res = await fetch(`${base}/api/auth/session`, {
-    headers: {
-      Cookie: cookie,
-      Accept: "application/json",
-    },
-    method: "GET",
-  });
-  if (!res.ok) {
-    throw new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  const json = await res.json().catch(() => ({}));
-  const uid: string | undefined =
-    json?.user?.id ||
-    json?.user?.userId ||
-    json?.session?.user?.id ||
-    json?.session?.userId ||
-    json?.data?.user?.id ||
-    json?.data?.user?.userId;
-  if (!uid) {
-    throw new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  return String(uid);
-}
 
 function inferMediaTypeFromName(name: string, fallback: string = "application/octet-stream"): string {
   const ext = path.extname(name).toLowerCase();
