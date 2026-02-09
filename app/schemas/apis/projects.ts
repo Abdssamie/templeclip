@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MediaBinItem, TimelineState } from "~/components/timeline/types";
+import type { MediaBinItem, Scene, TimelineState } from "~/components/timeline/types";
 
 const dateLikeToString = (v: unknown) => (v instanceof Date ? v.toISOString() : String(v));
 const DateString = z.union([z.string(), z.date()]).transform((v) => dateLikeToString(v));
@@ -39,14 +39,13 @@ export const PatchProjectBodySchema = z.object({
   timeline: z
     .unknown()
     .nullish()
-    .transform((v) => v as TimelineState ?? undefined),
+    .transform((v) => (v as TimelineState) ?? undefined),
   textBinItems: z
     .array(z.unknown())
     .nullish()
-    .transform((v) => v as MediaBinItem[] ?? undefined),
+    .transform((v) => (v as MediaBinItem[]) ?? undefined),
   scenes: z
     .array(z.unknown())
     .nullish()
-    .transform((v) => v ?? undefined),
+    .transform((v) => (v as Scene[]) ?? undefined),
 });
-

@@ -1,15 +1,22 @@
 import fs from "fs";
 import path from "path";
-import type { MediaBinItem, TimelineState } from "~/components/timeline/types";
+import type { MediaBinItem, Scene, TimelineState } from "~/components/timeline/types";
 import { listAssetsByUser, softDeleteAsset } from "~/lib/assets.repo";
 import { auth } from "~/lib/auth.server";
-import { createProject, deleteProjectById, getProjectById, getProjectScenes, listProjectsByUser, updateProjectScenes } from "~/lib/projects.repo";
+import {
+  createProject,
+  deleteProjectById,
+  getProjectById,
+  getProjectScenes,
+  listProjectsByUser,
+  updateProjectScenes,
+} from "~/lib/projects.repo";
 import { loadProjectState, saveProjectState } from "~/lib/timeline.store";
 import {
-    CreateProjectBodySchema,
-    PatchProjectBodySchema,
-    ProjectsResponseSchema,
-    ProjectStateResponseSchema,
+  CreateProjectBodySchema,
+  PatchProjectBodySchema,
+  ProjectsResponseSchema,
+  ProjectStateResponseSchema,
 } from "~/schemas";
 
 async function requireUserId(request: Request): Promise<string> {
@@ -55,7 +62,7 @@ export async function loader({ request }: { request: Request }) {
     const proj = await getProjectById(id);
     if (!proj || proj.user_id !== userId) return new Response("Not Found", { status: 404 });
     const state = await loadProjectState(id);
-    const scenes = await getProjectScenes(id);
+    const scenes: Scene[] = await getProjectScenes(id);
     const payload = ProjectStateResponseSchema.parse({
       project: proj,
       timeline: state.timeline,
@@ -172,8 +179,8 @@ export async function action({ request }: { request: Request }) {
     const parsed = PatchProjectBodySchema.safeParse(body);
     const name: string | undefined = parsed.success ? parsed.data.name : undefined;
     const timeline: TimelineState | undefined = parsed.success ? parsed.data.timeline : undefined;
-    const textBinItems: MediaBinItem[] | undefined = (parsed.success ? parsed.data.textBinItems : undefined);
-    const scenes: unknown[] | undefined = (parsed.success ? parsed.data.scenes : undefined);
+    const textBinItems: MediaBinItem[] | undefined = parsed.success ? parsed.data.textBinItems : undefined;
+    const scenes: Scene[] | undefined = parsed.success ? parsed.data.scenes : undefined;
     if (!name && !timeline && !textBinItems && !scenes)
       return new Response(JSON.stringify({ error: "No changes" }), {
         status: 400,
@@ -195,7 +202,7 @@ export async function action({ request }: { request: Request }) {
       console.error("Invalid database URL");
     }
     const pool = new Pool({
-      connectionString
+      connectionString,
     });
     try {
       if (name) {
