@@ -60,25 +60,33 @@ export async function loader({ request }: { request: Request }) {
     // Delete assets belonging to this project
     try {
       const assets = await listAssetsByUser(userId, id);
-      for (const a of assets) {
-        // Remove file from out/
-        try {
-          // Validate storage_key to prevent path traversal
-          if (!a.storage_key || typeof a.storage_key !== "string") {
-            console.error("Invalid storage key");
-            continue;
+      await Promise.all(
+        assets.map(async (a) => {
+          // Remove file from out/
+          try {
+            // Validate storage_key to prevent path traversal
+            if (!a.storage_key || typeof a.storage_key !== "string") {
+              console.error("Invalid storage key");
+              return;
+            }
+            // Sanitize the storage key to prevent path traversal
+            const sanitizedKey = path.basename(a.storage_key);
+            const filePath = path.resolve("out", sanitizedKey);
+            if (filePath.startsWith(path.resolve("out"))) {
+              try {
+                await fs.promises.unlink(filePath);
+              } catch (e) {
+                if ((e as { code?: string }).code !== "ENOENT") {
+                  console.error("Failed to delete asset", e);
+                }
+              }
+            }
+          } catch {
+            console.error("Failed to delete asset");
           }
-          // Sanitize the storage key to prevent path traversal
-          const sanitizedKey = path.basename(a.storage_key);
-          const filePath = path.resolve("out", sanitizedKey);
-          if (filePath.startsWith(path.resolve("out")) && fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-          }
-        } catch {
-          console.error("Failed to delete asset");
-        }
-        await softDeleteAsset(a.id, userId);
-      }
+          await softDeleteAsset(a.id, userId);
+        }),
+      );
     } catch {
       console.error("Failed to delete assets");
     }
@@ -126,17 +134,30 @@ export async function action({ request }: { request: Request }) {
     // cascade delete assets (files + soft delete rows)
     try {
       const assets = await listAssetsByUser(userId, id);
-      for (const a of assets) {
-        try {
-          const filePath = path.resolve("out", a.storage_key);
-          if (filePath.startsWith(path.resolve("out")) && fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+      await Promise.all(
+        assets.map(async (a) => {
+          try {
+            if (!a.storage_key || typeof a.storage_key !== "string") {
+              console.error("Invalid storage key");
+              return;
+            }
+            const sanitizedKey = path.basename(a.storage_key);
+            const filePath = path.resolve("out", sanitizedKey);
+            if (filePath.startsWith(path.resolve("out"))) {
+              try {
+                await fs.promises.unlink(filePath);
+              } catch (e) {
+                if ((e as { code?: string }).code !== "ENOENT") {
+                  console.error("Failed to delete asset", e);
+                }
+              }
+            }
+          } catch {
+            console.error("Failed to delete asset");
           }
-        } catch {
-          console.error("Failed to delete asset");
-        }
-        await softDeleteAsset(a.id, userId);
-      }
+          await softDeleteAsset(a.id, userId);
+        }),
+      );
     } catch {
       console.error("Failed to delete assets");
     }
