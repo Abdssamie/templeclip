@@ -2,9 +2,9 @@ import { z } from "zod";
 
 export const AuthUserSchema = z.object({
   id: z.string(),
-  email: z.string().email().nullable().optional(),
+  email: z.email().nullable().optional(),
   name: z.string().nullable().optional(),
-  image: z.string().url().nullable().optional(),
+  image: z.url().nullable().optional(),
 });
 
 // Various possible Better Auth response envelopes
@@ -19,10 +19,12 @@ export const BetterAuthUserSchema = z.object({
 
 export const BetterAuthEnvelopeSchema = z.object({
   user: BetterAuthUserSchema.optional(),
-  data: z.object({
-    user: BetterAuthUserSchema.optional(),
-    session: z.any().optional(),
-  }).optional(),
+  data: z
+    .object({
+      user: BetterAuthUserSchema.optional(),
+      session: z.any().optional(),
+    })
+    .optional(),
   session: z
     .object({
       user: BetterAuthUserSchema.optional(),
@@ -46,4 +48,3 @@ export function normalizeAuthUser(input: unknown): z.infer<typeof AuthUserSchema
   };
   return AuthUserSchema.parse(normalized);
 }
-

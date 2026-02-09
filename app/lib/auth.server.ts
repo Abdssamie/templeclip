@@ -68,9 +68,8 @@ export const auth = betterAuth({
     google: {
       clientId: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      redirectURI: process.env.NODE_ENV === "development"
-        ? "http://localhost:5173/api/auth/callback/google"
-        : undefined, // Let it auto-detect in prod
+      redirectURI:
+        process.env.NODE_ENV === "development" ? "http://localhost:5173/api/auth/callback/google" : undefined, // Let it auto-detect in prod
     },
   },
   emailAndPassword: {

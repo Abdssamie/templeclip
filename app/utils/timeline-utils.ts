@@ -1,10 +1,4 @@
-import {
-  type TimelineState,
-  type TimelineDataItem,
-  type Transition,
-  type ScrubberState,
-  type BaseScrubber,
-} from "../components/timeline/types";
+import { type TimelineState, type TimelineDataItem, type Transition } from "../components/timeline/types";
 
 export function transformTimelineToData(timeline: TimelineState, pixelsPerSecond: number): TimelineDataItem[] {
   const scrubbers: TimelineDataItem["scrubbers"] = [];

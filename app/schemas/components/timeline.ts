@@ -6,4 +6,3 @@ export {
   TextPropertiesSchema,
   TransitionSchema,
 } from "../timeline";
-

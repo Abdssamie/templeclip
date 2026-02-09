@@ -164,13 +164,7 @@ export default function TimelineEditor() {
   } = useMediaBin(handleDeleteScrubbersByMediaBinId);
 
   // Scene management
-  const {
-    scenes,
-    loadScenes,
-    createScene,
-    updateScene,
-    deleteScene,
-  } = useScenes(projectId || "");
+  const { scenes, loadScenes, createScene, updateScene, deleteScene } = useScenes(projectId || "");
 
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
   const [projectTimeline, setProjectTimeline] = useState<TimelineState | null>(null);
@@ -181,13 +175,14 @@ export default function TimelineEditor() {
 
     // Debounce the sync to avoid rapid updates
     const timer = setTimeout(() => {
-      const currentScene = scenes.find(s => s.id === activeSceneId);
+      const currentScene = scenes.find((s) => s.id === activeSceneId);
       if (!currentScene) return;
 
       const newSchema = getVariablesFromTimeline();
       const oldSchema = currentScene.variableSchema;
 
-      const hasChanged = newSchema.length !== oldSchema.length ||
+      const hasChanged =
+        newSchema.length !== oldSchema.length ||
         newSchema.some((v, i) => v.name !== oldSchema[i].name || v.mediaType !== oldSchema[i].mediaType);
 
       if (hasChanged) {
@@ -198,7 +193,6 @@ export default function TimelineEditor() {
 
     return () => clearTimeout(timer);
   }, [activeSceneId, timeline, scenes, updateScene, getVariablesFromTimeline]);
-
 
   // Load scenes when project loads
   useEffect(() => {
@@ -268,15 +262,14 @@ export default function TimelineEditor() {
         setActiveSceneId(null);
 
         // Allow state to settle slightly before deletion to prevent race conditions
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       } else {
         console.log("Deleting inactive scene...");
       }
       return await deleteScene(sceneId);
     },
-    [activeSceneId, projectTimeline, setTimelineFromServer, deleteScene]
+    [activeSceneId, projectTimeline, setTimelineFromServer, deleteScene],
   );
-
 
   // Persist MediaBin view state across panel switches
   const [mediaArrangeMode, setMediaArrangeMode] = useState<"default" | "group">("default");
@@ -611,7 +604,17 @@ export default function TimelineEditor() {
 
     console.log(JSON.stringify(payload, null, 2));
     toast.success("Full render payload logged to console");
-  }, [getTimelineData, timelineData, scenes, durationInFrames, width, height, isAutoSize, getPixelsPerSecond, variableValues]);
+  }, [
+    getTimelineData,
+    timelineData,
+    scenes,
+    durationInFrames,
+    width,
+    height,
+    isAutoSize,
+    getPixelsPerSecond,
+    variableValues,
+  ]);
 
   const handleWidthChange = useCallback((newWidth: number) => {
     setWidth(newWidth);
@@ -871,7 +874,6 @@ export default function TimelineEditor() {
 
   const { user, isLoading: isAuthLoading, isSigningIn, signInWithGoogle, signOut } = useAuth();
 
-
   return (
     <div
       className="h-screen flex flex-col bg-background text-foreground"
@@ -897,7 +899,7 @@ export default function TimelineEditor() {
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20">
                 <Clapperboard className="h-3 w-3 text-primary" />
                 <span className="text-xs font-medium text-primary">
-                  {scenes.find(s => s.id === activeSceneId)?.name || "Scene"}
+                  {scenes.find((s) => s.id === activeSceneId)?.name || "Scene"}
                 </span>
               </div>
             </>
@@ -963,10 +965,11 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
-                ? "bg-background text-primary"
-                : "text-muted-foreground"
-                }`}
+              className={`h-9 w-9 p-0 ${
+                location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
+                  ? "bg-background text-primary"
+                  : "text-muted-foreground"
+              }`}
               onClick={() => openSection("media-bin")}
               title="Media Bin">
               <File className="h-5 w-5" />
@@ -974,8 +977,9 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
-                }`}
+              className={`h-9 w-9 p-0 ${
+                location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
+              }`}
               onClick={() => openSection("text-editor")}
               title="Text Editor">
               <Type className="h-5 w-5" />
@@ -983,8 +987,9 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
-                }`}
+              className={`h-9 w-9 p-0 ${
+                location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
+              }`}
               onClick={() => openSection("transitions")}
               title="Transitions">
               <BetweenVerticalEnd className="h-5 w-5" />
@@ -1037,8 +1042,12 @@ export default function TimelineEditor() {
                 onSortByChange={setMediaSortBy}
                 // Variable management
                 variableValues={variableValues}
-                onVariableValueChange={(name, value) => setVariableValues(prev => ({ ...prev, [name]: value }))}
-                allScrubbers={getAllScrubbers().map(s => ({ id: s.id, variableName: s.variableName, mediaType: s.mediaType }))}
+                onVariableValueChange={(name, value) => setVariableValues((prev) => ({ ...prev, [name]: value }))}
+                allScrubbers={getAllScrubbers().map((s) => ({
+                  id: s.id,
+                  variableName: s.variableName,
+                  mediaType: s.mediaType,
+                }))}
                 onAssignVariable={assignVariableToScrubber}
                 // Scene management
                 scenes={scenes}
@@ -1053,9 +1062,6 @@ export default function TimelineEditor() {
 
           {/* Hide handle when collapsed to 0 */}
           <ResizableHandle withHandle className={isSidebarCollapsed ? "opacity-0 pointer-events-none" : undefined} />
-
-
-
 
           {/* Center Area: Preview and Timeline */}
           <ResizablePanel defaultSize={80}>
@@ -1132,8 +1138,6 @@ export default function TimelineEditor() {
                           Auto
                         </Label>
                       </div>
-
-
                     </div>
                   </div>
 
@@ -1270,7 +1274,9 @@ export default function TimelineEditor() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => selectedScrubberIds.length === 1 && handleUngroupSelected(selectedScrubberIds[0])}
+                        onClick={() =>
+                          selectedScrubberIds.length === 1 && handleUngroupSelected(selectedScrubberIds[0])
+                        }
                         disabled={selectedScrubberIds.length !== 1} // Ideally check if it's a group, but this is safe enough for now (handler checks)
                         className="h-6 px-2 text-xs"
                         title="Ungroup selected item">
@@ -1329,8 +1335,6 @@ export default function TimelineEditor() {
               </ResizablePanel>
             </ResizablePanelGroup>
           </ResizablePanel>
-
-
         </ResizablePanelGroup>
       </div>
 

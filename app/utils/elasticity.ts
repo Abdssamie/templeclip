@@ -1,4 +1,11 @@
-import type { ElasticityRule, Scene, TimelineDataItem } from "~/components/timeline/types";
+import type {
+  BaseScrubber,
+  ElasticityRule,
+  Scene,
+  ScrubberRuntimeProps,
+  ScrubberState,
+  TimelineDataItem,
+} from "~/components/timeline/types";
 
 /**
  * Calculate the actual duration for a scrubber based on its elasticity rule.
@@ -12,7 +19,7 @@ import type { ElasticityRule, Scene, TimelineDataItem } from "~/components/timel
  * @returns Duration in seconds
  */
 export function calculateElasticDuration(
-  scrubber: any, // TimelineDataItem scrubber with runtime props
+  scrubber: BaseScrubber & ScrubberRuntimeProps, // TimelineDataItem scrubber with runtime props
   elasticityRules: ElasticityRule[],
 ): number {
   // Find the elasticity rule for this scrubber
@@ -26,9 +33,9 @@ export function calculateElasticDuration(
   // For "stretch" strategy, we need to get the actual media duration
   if (rule.strategy === "stretch") {
     // For video/audio scrubbers, use durationInSeconds if available
-    if (scrubber.durationInSeconds && scrubber.durationInSeconds > 0) {
+    if (scrubber.duration && scrubber.duration > 0) {
       // Account for trimming if present
-      let actualDuration = scrubber.durationInSeconds;
+      let actualDuration = scrubber.duration;
 
       if (scrubber.trimBefore || scrubber.trimAfter) {
         const fps = 30; // TODO: Get from composition settings
@@ -85,7 +92,7 @@ export function applyElasticityToTimeline(timelineData: TimelineDataItem[], scen
 
     // Recalculate positions for scrubbers after the elastic ones
     // Sort by startTime and adjust subsequent scrubbers to prevent overlap
-    item.scrubbers.sort((a: any, b: any) => a.startTime - b.startTime);
+    item.scrubbers.sort((a, b) => a.startTime - b.startTime);
 
     for (let i = 1; i < item.scrubbers.length; i++) {
       const prev = item.scrubbers[i - 1];

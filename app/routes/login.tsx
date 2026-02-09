@@ -12,8 +12,7 @@ export async function loader({ request }: { request: Request }) {
   // If already authenticated, redirect to projects
   try {
     const session = await auth.api?.getSession?.({ headers: request.headers });
-    const uid: string | undefined =
-      session?.user?.id || session?.session?.userId;
+    const uid: string | undefined = session?.user?.id || session?.session?.userId;
     if (uid)
       return new Response(null, {
         status: 302,
@@ -27,7 +26,7 @@ export async function loader({ request }: { request: Request }) {
 
 export default function LoginPage() {
   const { isSigningIn, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -36,8 +35,8 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
-    if (mode === 'signup' && !name) {
+
+    if (mode === "signup" && !name) {
       setError("Name is required for sign up");
       return;
     }
@@ -48,7 +47,7 @@ export default function LoginPage() {
     }
 
     let result;
-    if (mode === 'signin') {
+    if (mode === "signin") {
       result = await signInWithEmail(email, password);
     } else {
       result = await signUpWithEmail(email, password, name);
@@ -81,10 +80,7 @@ export default function LoginPage() {
       </div>
 
       {/* Sweeping playhead */}
-      <div
-        className="absolute inset-y-0 -z-10"
-        style={{ animation: "sweep 14s linear infinite" }}
-      >
+      <div className="absolute inset-y-0 -z-10" style={{ animation: "sweep 14s linear infinite" }}>
         <div className="absolute top-0 bottom-0 w-px bg-primary/70" />
         <div className="absolute top-0 bottom-0 w-[3px] translate-x-[-1px] bg-primary/30 blur-[1px]" />
       </div>
@@ -106,137 +102,139 @@ export default function LoginPage() {
       {/* Centerpiece orb & Login Form */}
       <main className="relative grid place-items-center px-4 min-h-screen">
         <div className="relative flex flex-col items-center w-full max-w-md p-8 rounded-3xl border border-border/40 bg-background/25 backdrop-blur-2xl">
-           {/* Kimu Logo Header */}
-           <div className="flex flex-col items-center mb-8">
-              <div className="relative h-20 w-20 mb-4 rounded-full border border-white/10 flex items-center justify-center bg-black/20">
-                <KimuLogo className="h-10 w-10" />
-                 {/* Subtle spin effect on hover/active */}
-                 <div className="absolute inset-0 rounded-full border border-white/5 animate-[spin_10s_linear_infinite] opacity-50 pointer-events-none" />
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {mode === 'signin' ? 'Welcome back' : 'Create an account'}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1 text-center">
-                {mode === 'signin' ? 'Enter your credentials to access your projects' : 'Join Kimu to start creating cinematic videos'}
-              </p>
-           </div>
+          {/* Kimu Logo Header */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative h-20 w-20 mb-4 rounded-full border border-white/10 flex items-center justify-center bg-black/20">
+              <KimuLogo className="h-10 w-10" />
+              {/* Subtle spin effect on hover/active */}
+              <div className="absolute inset-0 rounded-full border border-white/5 animate-[spin_10s_linear_infinite] opacity-50 pointer-events-none" />
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {mode === "signin" ? "Welcome back" : "Create an account"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1 text-center">
+              {mode === "signin"
+                ? "Enter your credentials to access your projects"
+                : "Join Kimu to start creating cinematic videos"}
+            </p>
+          </div>
 
-           {/* Auth Form */}
-           <div className="w-full space-y-4">
+          {/* Auth Form */}
+          <div className="w-full space-y-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={signInWithGoogle}
+              disabled={isSigningIn}
+              className="w-full h-11 relative overflow-hidden bg-white/5 hover:bg-white/10 border-white/10 transition-all">
+              <FaGoogle className="mr-2 h-4 w-4" />
+              Continue with Google
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background/0 px-2 text-muted-foreground backdrop-blur-xl">Or continue with</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      placeholder="Your Name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary/50"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="hello@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary/50"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary/50"
+                    required
+                    minLength={8}
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="text-sm text-red-500 text-center bg-red-500/10 p-2 rounded-md border border-red-500/20">
+                  {error}
+                </div>
+              )}
+
               <Button
-                type="button"
-                variant="outline"
-                onClick={signInWithGoogle}
+                type="submit"
                 disabled={isSigningIn}
-                className="w-full h-11 relative overflow-hidden bg-white/5 hover:bg-white/10 border-white/10 transition-all"
-              >
-                 <FaGoogle className="mr-2 h-4 w-4" />
-                 Continue with Google
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-white/10" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background/0 px-2 text-muted-foreground backdrop-blur-xl">Or continue with</span>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {mode === 'signup' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <div className="relative">
-                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                       <Input 
-                          id="name" 
-                          placeholder="Your Name" 
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary/50"
-                          required
-                       />
-                    </div>
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                     <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="hello@example.com" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary/50"
-                        required
-                     />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                     <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                     <Input 
-                        id="password" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary/50"
-                        required
-                        minLength={8}
-                     />
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="text-sm text-red-500 text-center bg-red-500/10 p-2 rounded-md border border-red-500/20">
-                    {error}
-                  </div>
-                )}
-
-                <Button 
-                   type="submit" 
-                   disabled={isSigningIn}
-                   className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 transition-all font-medium"
-                >
-                  {isSigningIn ? (
-                     <>
-                       <svg className="h-4 w-4 animate-spin mr-2" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity=".25" />
-                          <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="4" fill="none" />
-                       </svg>
-                       {mode === 'signin' ? 'Signing in...' : 'Creating account...'}
-                     </>
-                  ) : (
-                     mode === 'signin' ? 'Sign In' : 'Create Account'
-                  )}
-                </Button>
-              </form>
-
-              <div className="text-center text-sm text-muted-foreground mt-4">
-                {mode === 'signin' ? (
+                className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 transition-all font-medium">
+                {isSigningIn ? (
                   <>
-                    Don't have an account?{" "}
-                    <button onClick={() => setMode('signup')} className="text-primary hover:underline font-medium">
-                      Sign up
-                    </button>
+                    <svg className="h-4 w-4 animate-spin mr-2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity=".25" />
+                      <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    </svg>
+                    {mode === "signin" ? "Signing in..." : "Creating account..."}
                   </>
+                ) : mode === "signin" ? (
+                  "Sign In"
                 ) : (
-                  <>
-                    Already have an account?{" "}
-                    <button onClick={() => setMode('signin')} className="text-primary hover:underline font-medium">
-                      Sign in
-                    </button>
-                  </>
+                  "Create Account"
                 )}
-              </div>
-           </div>
+              </Button>
+            </form>
+
+            <div className="text-center text-sm text-muted-foreground mt-4">
+              {mode === "signin" ? (
+                <>
+                  Don't have an account?{" "}
+                  <button onClick={() => setMode("signup")} className="text-primary hover:underline font-medium">
+                    Sign up
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button onClick={() => setMode("signin")} className="text-primary hover:underline font-medium">
+                    Sign in
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 

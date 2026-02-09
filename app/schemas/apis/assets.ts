@@ -17,7 +17,6 @@ export const AssetsResponseSchema = z.object({
       durationInSeconds: numberish.nullable(),
       created_at: DateString,
       mediaUrlRemote: z.string(),
-      // R2 storage fields (nullable for backward compatibility)
       r2_key: z.string().nullable().optional(),
       r2_bucket: z.string().nullable().optional(),
       upload_status: z.enum(["pending", "uploading", "completed", "failed"]).nullable().optional(),

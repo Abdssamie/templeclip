@@ -9,4 +9,3 @@ export const TransitionDragPayloadSchema = z.object({
   leftScrubberId: z.string().nullable(),
   rightScrubberId: z.string().nullable(),
 });
-

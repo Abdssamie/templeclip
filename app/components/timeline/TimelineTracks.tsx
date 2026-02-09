@@ -14,6 +14,7 @@ import {
   type Transition,
   type Scene,
   FPS,
+  type TemplateVariable,
 } from "./types";
 import { MediaBinItemSchema } from "~/schemas/components/timeline";
 
@@ -29,7 +30,15 @@ interface TimelineTracksProps {
   onBeginScrubberTransform?: () => void;
   onDropOnTrack: (item: MediaBinItem, trackId: string, dropLeftPx: number) => void;
   onDropTransitionOnTrack: (transition: Transition, trackId: string, dropLeftPx: number) => void;
-  onDropSceneOnTrack: (sceneId: string, sceneName: string, variableSchema: any[], trackId: string, dropLeftPx: number, compositionWidth: number, compositionHeight: number) => void;
+  onDropSceneOnTrack: (
+    sceneId: string,
+    sceneName: string,
+    variableSchema: TemplateVariable[],
+    trackId: string,
+    dropLeftPx: number,
+    compositionWidth: number,
+    compositionHeight: number,
+  ) => void;
   onDeleteTransition: (transitionId: string) => void;
   getAllScrubbers: () => ScrubberState[];
   expandTimeline: () => boolean;
@@ -144,8 +153,9 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
       {/* Scrollable Tracks Area */}
       <div
         ref={containerRef}
-        className={`relative flex-1 bg-timeline-background timeline-scrollbar ${timeline.tracks.length === 0 ? "overflow-hidden" : "overflow-auto"
-          }`}
+        className={`relative flex-1 bg-timeline-background timeline-scrollbar ${
+          timeline.tracks.length === 0 ? "overflow-hidden" : "overflow-auto"
+        }`}
         onScroll={timeline.tracks.length > 0 ? onScroll : undefined}>
         {timeline.tracks.length === 0 ? (
           /* Empty state - non-scrollable and centered */
@@ -229,7 +239,7 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                     trackId,
                     dropXInTimeline,
                     compositionWidth,
-                    compositionHeight
+                    compositionHeight,
                   );
                 } else {
                   // Handle media item drop
@@ -240,17 +250,17 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                     // Ignore invalid payloads
                   }
                 }
-              }
-              }>
+              }}>
               {/* Track backgrounds and grid lines */}
               {timeline.tracks.map((track, trackIndex) => (
                 <div key={track.id} className="relative" style={{ height: `${DEFAULT_TRACK_HEIGHT}px` }}>
                   {/* Track background */}
                   <div
-                    className={`absolute w-full border-b border-border/30 transition-colors ${trackIndex % 2 === 0
-                      ? "bg-timeline-track hover:bg-timeline-track/80"
-                      : "bg-timeline-background hover:bg-muted/20"
-                      }`}
+                    className={`absolute w-full border-b border-border/30 transition-colors ${
+                      trackIndex % 2 === 0
+                        ? "bg-timeline-track hover:bg-timeline-track/80"
+                        : "bg-timeline-background hover:bg-muted/20"
+                    }`}
                     style={{
                       top: `0px`,
                       height: `${DEFAULT_TRACK_HEIGHT}px`,
@@ -297,8 +307,6 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                   track.scrubbers.some((s) => s.id === scrubber.id),
                 );
 
-
-
                 return (
                   <Scrubber
                     key={scrubber.id}
@@ -320,7 +328,7 @@ export const TimelineTracks: React.FC<TimelineTracksProps> = ({
                     pixelsPerSecond={pixelsPerSecond}
                     onBeginTransform={onBeginScrubberTransform}
                     onAssignVariable={onAssignVariable}
-                    scene={scrubber.mediaType === "scene" ? scenes.find(s => s.id === (scrubber as any).sceneId) : undefined}
+                    scene={scrubber.mediaType === "scene" ? scenes.find((s) => s.id === scrubber.sceneId) : undefined}
                   />
                 );
               })}

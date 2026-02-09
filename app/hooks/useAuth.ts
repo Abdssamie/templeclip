@@ -49,7 +49,11 @@ interface UseAuthResult {
   isSigningIn: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error?: { message: string } | null } | void>;
-  signUpWithEmail: (email: string, password: string, name: string) => Promise<{ error?: { message: string } | null } | void>;
+  signUpWithEmail: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<{ error?: { message: string } | null } | void>;
   signOut: () => Promise<void>;
 }
 

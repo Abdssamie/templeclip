@@ -50,11 +50,9 @@ export async function loadProjectState(projectId: string): Promise<ProjectStateF
     const parsed = JSON.parse(raw);
     // Validate modern shape { timeline, textBinItems }
     if (parsed && typeof parsed === "object" && ("timeline" in parsed || "textBinItems" in parsed)) {
-      const safeTimeline = TimelineStateSchema.safeParse((parsed as any).timeline);
-      const safeTextBinItems = Array.isArray((parsed as any).textBinItems)
-        ? (parsed as any).textBinItems
-            .map((i: unknown) => (MediaBinItemSchema.safeParse(i).success ? i : null))
-            .filter(Boolean)
+      const safeTimeline = TimelineStateSchema.safeParse(parsed.timeline);
+      const safeTextBinItems = Array.isArray(parsed.textBinItems)
+        ? parsed.textBinItems.map((i: unknown) => (MediaBinItemSchema.safeParse(i).success ? i : null)).filter(Boolean)
         : [];
       return {
         timeline: (safeTimeline.success ? safeTimeline.data : defaultTimeline()) as unknown as TimelineState,
