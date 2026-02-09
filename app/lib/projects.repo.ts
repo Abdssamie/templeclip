@@ -1,26 +1,6 @@
-import { Pool } from "pg";
 import crypto from "crypto";
+import { getPool } from "~/lib/db.server";
 import type { Scene } from "~/components/timeline/types";
-
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    const rawDbUrl = process.env.DATABASE_URL || "";
-    let connectionString = rawDbUrl;
-    try {
-      const u = new URL(rawDbUrl);
-      u.search = "";
-      connectionString = u.toString();
-    } catch {
-      throw new Error("Invalid database URL");
-    }
-    pool = new Pool({
-      connectionString,
-    });
-  }
-  return pool;
-}
 
 export type ProjectRecord = {
   id: string;
