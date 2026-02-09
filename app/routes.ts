@@ -17,6 +17,7 @@ export default [
   route("/api/projects/*", "routes/api.projects.$.tsx"),
   route("/api/assets/*", "routes/api.assets.$.tsx"),
   route("/api/storage/*", "routes/api.storage.$.tsx"),
+  route("/api/scenes/*", "routes/api.scenes.$.tsx"),
   route("/api/r2/presigned-upload", "routes/api.r2.presigned-upload.tsx"),
   route("/api/r2/presigned-download", "routes/api.r2.presigned-download.tsx"),
   route("/api/r2/confirm-upload", "routes/api.r2.confirm-upload.tsx"),
