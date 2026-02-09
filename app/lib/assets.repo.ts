@@ -1,5 +1,5 @@
-import { Pool } from "pg";
 import crypto from "crypto";
+import { getPool } from "~/lib/db.server";
 
 export type AssetRecord = {
   id: string;
@@ -18,26 +18,6 @@ export type AssetRecord = {
   r2_key: string | null;
   upload_status: string | null;
 };
-
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    const rawDbUrl = process.env.DATABASE_URL || "";
-    let connectionString = rawDbUrl;
-    try {
-      const u = new URL(rawDbUrl);
-      u.search = "";
-      connectionString = u.toString();
-    } catch {
-      // keep as-is
-    }
-    pool = new Pool({
-      connectionString,
-    });
-  }
-  return pool;
-}
 
 // Schema creation is handled by SQL migrations in /migrations.
 
