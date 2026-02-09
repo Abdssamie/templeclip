@@ -6,7 +6,7 @@ import { iris } from "@remotion/transitions/iris";
 import { wipe } from "@remotion/transitions/wipe";
 import { flip } from "@remotion/transitions/flip";
 import { slide } from "@remotion/transitions/slide";
-import React from "react";
+import React, { useMemo } from "react";
 import {
   FPS,
   PIXELS_PER_SECOND,
@@ -126,6 +126,11 @@ export function TimelineComposition({
   const resolvedPixelsPerSecond = typeof getPixelsPerSecond === "function" ? getPixelsPerSecond() : getPixelsPerSecond;
   // Get all transitions from timelineData
   const allTransitions = timelineData[0].transitions;
+
+  // Create a map of scenes for faster lookup (O(1))
+  const sceneMap = useMemo(() => {
+    return new Map(scenes.map((s) => [s.id, s]));
+  }, [scenes]);
 
   // Helper to resolve variables - supports both variableName field and {{ varName }} syntax in content
   const resolveVariable = (value: string | null, variableName?: string | null) => {
@@ -280,7 +285,7 @@ export function TimelineComposition({
           return null;
         }
 
-        const scene = scenes.find((s) => s.id === sceneId);
+        const scene = sceneMap.get(sceneId);
 
         if (!scene) {
           console.warn(`Scene not found: ${sceneId}`);
