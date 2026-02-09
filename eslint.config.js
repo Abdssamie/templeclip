@@ -6,6 +6,9 @@ import reactHooksPlugin from "eslint-plugin-react-hooks";
 import remotionPlugin from "@remotion/eslint-plugin";
 
 export default [
+  {
+    ignores: ["build/**", "dist/**", "node_modules/**", ".react-router/**"],
+  },
   eslint.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
