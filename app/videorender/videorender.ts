@@ -6,6 +6,7 @@ import cors from "cors";
 import fs from "fs";
 import multer from "multer";
 import { safeResolveOutPath, createSafeFilename, ensureDirectoryExists, isValidFilename } from "~/utils/path-security";
+import { applyElasticityToTimeline } from "~/utils/elasticity";
 
 // The composition you want to render
 const compositionId = "TimelineComposition";
@@ -281,15 +282,38 @@ app.post("/render", async (req, res) => {
       return;
     }
 
+    // Clone timeline data to avoid mutating the original
+    const timelineData = JSON.parse(JSON.stringify(req.body.timelineData));
+    const variableValues = req.body.variableValues || {};
+    const scenes = req.body.scenes || [];
+    const applyElasticity = req.body.applyElasticity !== false; // Default to true
+
+    // Apply elasticity rules if enabled (server-side only)
+    if (applyElasticity && scenes.length > 0) {
+      console.log("Applying elasticity rules to timeline...");
+      applyElasticityToTimeline(timelineData, scenes);
+    }
+
+    // Recalculate duration after elasticity
+    let maxEndTime = 0;
+    for (const item of timelineData) {
+      for (const scrubber of item.scrubbers) {
+        if (scrubber.endTime > maxEndTime) {
+          maxEndTime = scrubber.endTime;
+        }
+      }
+    }
+    const durationInFrames = Math.ceil(maxEndTime * 30); // 30 FPS
+
     // Get input props from POST body
     const inputProps = {
-      timelineData: req.body.timelineData,
-      durationInFrames: req.body.durationInFrames,
+      timelineData,
+      durationInFrames,
       compositionWidth: req.body.compositionWidth,
       compositionHeight: req.body.compositionHeight,
       getPixelsPerSecond: req.body.getPixelsPerSecond || 100,
-      variableValues: req.body.variableValues || {},
-      scenes: req.body.scenes || [],
+      variableValues,
+      scenes,
       isRendering: true,
     };
 
