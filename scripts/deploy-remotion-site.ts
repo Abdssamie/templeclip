@@ -1,4 +1,5 @@
 import { deploySite, getOrCreateBucket } from '@remotion/lambda';
+import type { AwsRegion } from '@remotion/lambda/client';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
@@ -8,12 +9,12 @@ async function deployRemotionSite() {
 	console.log('🚀 Deploying Remotion project to S3...');
 
 	try {
-		const region = process.env.REMOTION_AWS_REGION || 'us-east-1';
+		const region = (process.env.REMOTION_AWS_REGION || 'us-east-1') as AwsRegion;
 
 		// Get or create S3 bucket
 		console.log('📦 Getting or creating S3 bucket...');
 		const { bucketName } = await getOrCreateBucket({
-			region: region as any,
+			region,
 		});
 		console.log(`✅ Bucket: ${bucketName}`);
 
@@ -22,7 +23,7 @@ async function deployRemotionSite() {
 		const { serveUrl } = await deploySite({
 			bucketName,
 			entryPoint: path.resolve(process.cwd(), 'app/videorender/index.ts'),
-			region: region as any,
+			region,
 			siteName: 'kimu-video-renderer',
 			options: {
 				onBundleProgress: (progress) => {

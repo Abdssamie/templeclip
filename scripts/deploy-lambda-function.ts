@@ -1,4 +1,5 @@
 import { deployFunction } from '@remotion/lambda';
+import type { AwsRegion } from '@remotion/lambda/client';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -7,10 +8,10 @@ async function deployLambdaFunction() {
 	console.log('🚀 Deploying Remotion Lambda function...');
 
 	try {
-		const region = process.env.REMOTION_AWS_REGION || 'us-east-1';
+		const region = (process.env.REMOTION_AWS_REGION || 'us-east-1') as AwsRegion;
 
 		const { functionName } = await deployFunction({
-			region: region as any,
+			region,
 			timeoutInSeconds: 120,
 			memorySizeInMb: 2048,
 			diskSizeInMb: 2048,
