@@ -73,7 +73,7 @@ export async function startLambdaRender(
 /**
  * Check the progress of a Lambda render job
  */
-export async function getRenderProgress(
+export async function pollRenderProgress(
 	renderId: string,
 	bucketName: string
 ): Promise<RenderProgressResult> {
