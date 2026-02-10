@@ -286,7 +286,7 @@ export default function TimelineEditor() {
     updateRulerFromPlayer,
   } = useRuler(playerRef, timelineWidth, getPixelsPerSecond());
 
-  const { isRendering, renderStatus, handleRenderVideo } = useRenderer();
+  const { isRendering, renderStatus, progress, handleRenderVideo } = useRenderer();
 
   // Wrapper function for transition drop handler to match expected interface
   const handleDropTransitionOnTrackWrapper = (transition: Transition, trackId: string, dropLeftPx: number) => {
@@ -569,21 +569,53 @@ export default function TimelineEditor() {
     [handleAddMediaToBin],
   );
 
+  const buildSceneRenderRequests = useCallback(() => {
+    const requests: Array<{
+      sceneId: string;
+      variables: Record<string, string>;
+      duration?: number;
+    }> = [];
+
+    // Extract scene scrubbers from timeline
+    const timelineData = getTimelineData();
+    for (const item of timelineData) {
+      for (const scrubber of item.scrubbers) {
+        if (scrubber.mediaType === "scene" && "sceneId" in scrubber) {
+          requests.push({
+            sceneId: scrubber.sceneId,
+            variables: "variables" in scrubber ? scrubber.variables : {},
+            duration: scrubber.duration,
+          });
+        }
+      }
+    }
+
+    return requests;
+  }, [getTimelineData]);
+
   const handleRenderClick = useCallback(() => {
-    if (timelineData.length === 0 || timelineData.every((item) => item.scrubbers.length === 0)) {
-      toast.error("No timeline to render. Add some media first!");
+    if (!projectId) {
+      toast.error("No project ID found");
+      return;
+    }
+
+    const sceneRequests = buildSceneRenderRequests();
+
+    if (sceneRequests.length === 0) {
+      toast.error("No scenes to render. Add scenes to the timeline first!");
       return;
     }
 
     handleRenderVideo(
-      getTimelineData,
-      timeline,
-      isAutoSize ? null : width,
-      isAutoSize ? null : height,
-      getPixelsPerSecond,
+      projectId,
+      sceneRequests,
+      isAutoSize ? 1920 : width,
+      isAutoSize ? 1080 : height,
+      true, // applyElasticity
     );
+
     toast.info("Starting render...");
-  }, [handleRenderVideo, getTimelineData, timeline, width, height, isAutoSize, timelineData, getPixelsPerSecond]);
+  }, [projectId, buildSceneRenderRequests, handleRenderVideo, width, height, isAutoSize]);
 
   const handleLogTimelineData = useCallback(() => {
     if (timelineData.length === 0) {
@@ -1352,6 +1384,14 @@ export default function TimelineEditor() {
       {renderStatus && (
         <div className="fixed bottom-4 right-4 z-50">
           <RenderStatus renderStatus={renderStatus} />
+          {isRendering && progress > 0 && (
+            <div className="mt-2 w-64 bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
         </div>
       )}
 
