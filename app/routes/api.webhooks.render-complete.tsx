@@ -2,8 +2,59 @@ import type { ActionFunctionArgs } from 'react-router';
 import {
 	validateWebhookSignature,
 	type WebhookPayload,
+	type WebhookErrorPayload,
+	type WebhookSuccessPayload,
+	type WebhookTimeoutPayload,
 } from '@remotion/lambda/client';
 import { getLambdaConfig } from '~/lib/lambda-config.server';
+
+/**
+ * Type guard to check if payload is a valid WebhookPayload
+ */
+function isWebhookPayload(payload: unknown): payload is WebhookPayload {
+	if (!payload || typeof payload !== 'object') {
+		return false;
+	}
+
+	const p = payload as Record<string, unknown>;
+
+	// Check required base fields
+	if (
+		typeof p.renderId !== 'string' ||
+		typeof p.bucketName !== 'string' ||
+		typeof p.expectedBucketOwner !== 'string'
+	) {
+		return false;
+	}
+
+	// Check type field
+	if (p.type !== 'success' && p.type !== 'error' && p.type !== 'timeout') {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Type guard for success payload
+ */
+function isSuccessPayload(payload: WebhookPayload): payload is WebhookSuccessPayload {
+	return payload.type === 'success';
+}
+
+/**
+ * Type guard for error payload
+ */
+function isErrorPayload(payload: WebhookPayload): payload is WebhookErrorPayload {
+	return payload.type === 'error';
+}
+
+/**
+ * Type guard for timeout payload
+ */
+function isTimeoutPayload(payload: WebhookPayload): payload is WebhookTimeoutPayload {
+	return payload.type === 'timeout';
+}
 
 /**
  * POST /api/webhooks/render-complete
@@ -30,6 +81,16 @@ export async function action({ request }: ActionFunctionArgs) {
 		// Get webhook secret from config
 		const config = getLambdaConfig();
 		const webhookSecret = config.webhookSecret;
+		const isProduction = process.env.NODE_ENV === 'production';
+
+		// In production, webhook secret is required
+		if (isProduction && !webhookSecret) {
+			console.error('WEBHOOK_SECRET not set in production - rejecting webhook');
+			return Response.json(
+				{ error: 'Webhook authentication not configured' },
+				{ status: 500 }
+			);
+		}
 
 		// Validate webhook signature if secret is available
 		if (webhookSecret) {
@@ -58,45 +119,53 @@ export async function action({ request }: ActionFunctionArgs) {
 			}
 		} else {
 			console.warn(
-				'WEBHOOK_SECRET not set - skipping signature validation (not recommended for production)'
+				'WEBHOOK_SECRET not set - skipping signature validation (development mode only)'
 			);
 		}
 
-		// Cast body to WebhookPayload
-		const payload = body as WebhookPayload;
+		// Validate payload structure
+		if (!isWebhookPayload(body)) {
+			console.error('Invalid webhook payload structure:', body);
+			return Response.json(
+				{ error: 'Invalid webhook payload' },
+				{ status: 400 }
+			);
+		}
 
-		// Log webhook receipt
-		console.log('Received render completion webhook:', {
-			renderId: payload.renderId,
-			bucketName: payload.bucketName,
-			type: payload.type,
-		});
+		const payload = body;
 
-		// Handle different webhook types
-		if (payload.type === 'success') {
+	// Log webhook receipt
+	console.log('Received render completion webhook:', {
+		renderId: payload.renderId,
+		bucketName: payload.bucketName,
+		type: payload.type,
+	});
+
+		// Handle different webhook types with type guards
+		if (isSuccessPayload(payload)) {
 			console.log('Render completed successfully:', {
 				renderId: payload.renderId,
 				outputUrl: payload.outputUrl,
 				outputFile: payload.outputFile,
 				timeToFinish: payload.timeToFinish,
-				lambdaErrors: payload.lambdaErrors.length,
+				lambdaErrors: payload.lambdaErrors?.length ?? 0,
 			});
 
 			// TODO: Store render result in database for history/tracking
 			// TODO: Trigger post-processing (e.g., upload to CDN, send notification)
 			// TODO: Update render status cache for polling endpoint
-		} else if (payload.type === 'error') {
+		} else if (isErrorPayload(payload)) {
 			console.error('Render failed with errors:', {
 				renderId: payload.renderId,
-				errors: payload.errors.map((e) => ({
+				errors: payload.errors?.map((e) => ({
 					name: e.name,
 					message: e.message,
-				})),
+				})) ?? [],
 			});
 
 			// TODO: Store error in database
 			// TODO: Send error notification to user
-		} else if (payload.type === 'timeout') {
+		} else if (isTimeoutPayload(payload)) {
 			console.warn('Render timed out:', {
 				renderId: payload.renderId,
 			});

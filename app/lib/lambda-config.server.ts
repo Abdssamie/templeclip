@@ -8,6 +8,7 @@ export interface LambdaConfig {
 	awsAccessKeyId: string;
 	awsSecretAccessKey: string;
 	webhookSecret?: string;
+	prodDomain?: string;
 }
 
 /**
@@ -21,6 +22,7 @@ export function getLambdaConfig(): LambdaConfig {
 	const awsAccessKeyId = process.env.REMOTION_AWS_ACCESS_KEY_ID;
 	const awsSecretAccessKey = process.env.REMOTION_AWS_SECRET_ACCESS_KEY;
 	const webhookSecret = process.env.WEBHOOK_SECRET;
+	const prodDomain = process.env.PROD_DOMAIN;
 
 	// Validate required configuration
 	const missingVars: string[] = [];
@@ -48,6 +50,7 @@ export function getLambdaConfig(): LambdaConfig {
 		awsAccessKeyId: awsAccessKeyId!,
 		awsSecretAccessKey: awsSecretAccessKey!,
 		webhookSecret,
+		prodDomain,
 	};
 }
 

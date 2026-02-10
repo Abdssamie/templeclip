@@ -92,13 +92,29 @@ function mapErrors(
 }
 
 /**
+ * Validate domain format
+ */
+function isValidDomain(domain: string): boolean {
+	// Basic domain validation: no protocol, no path, no whitespace
+	const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+	return domainRegex.test(domain.trim());
+}
+
+/**
  * Get webhook URL for render completion notifications
  */
 function getWebhookUrl(): string | undefined {
-	const prodDomain = process.env.PROD_DOMAIN;
+	const config = getLambdaConfig();
+	const prodDomain = config.prodDomain;
 	
 	if (!prodDomain) {
 		console.warn('PROD_DOMAIN not set - webhook notifications will not be configured');
+		return undefined;
+	}
+
+	// Validate domain format
+	if (!isValidDomain(prodDomain)) {
+		console.error(`Invalid PROD_DOMAIN format: ${prodDomain} - webhook notifications will not be configured`);
 		return undefined;
 	}
 
