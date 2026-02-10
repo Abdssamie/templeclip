@@ -92,6 +92,20 @@ function mapErrors(
 }
 
 /**
+ * Get webhook URL for render completion notifications
+ */
+function getWebhookUrl(): string | undefined {
+	const prodDomain = process.env.PROD_DOMAIN;
+	
+	if (!prodDomain) {
+		console.warn('PROD_DOMAIN not set - webhook notifications will not be configured');
+		return undefined;
+	}
+
+	return `https://${prodDomain}/api/webhooks/render-complete`;
+}
+
+/**
  * Start a Lambda render job for a timeline composition
  */
 export async function startLambdaRender(
@@ -100,6 +114,7 @@ export async function startLambdaRender(
 	validateRenderInput(input);
 
 	const config = getLambdaConfig();
+	const webhookUrl = getWebhookUrl();
 
 	try {
 		const result = await renderMediaOnLambda({
@@ -118,6 +133,10 @@ export async function startLambdaRender(
 			maxRetries: 1,
 			privacy: 'public',
 			framesPerLambda: 20,
+			webhook: webhookUrl ? {
+				url: webhookUrl,
+				secret: config.webhookSecret || null,
+			} : undefined,
 		});
 
 		return {
