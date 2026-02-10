@@ -263,14 +263,32 @@ REMOTION_AWS_REGION=eu-west-3
 
 ## Verification Checklist
 
-- [ ] Lambda function deployed successfully
-- [ ] Remotion project deployed to S3
-- [ ] Client can initiate Lambda renders
-- [ ] Progress polling works
-- [ ] Webhook receives completion notifications
-- [ ] Scene-by-ID rendering works
-- [ ] Variable validation works
-- [ ] End-to-end test passes
+- [x] Lambda function deployed successfully (Phase 1 - COMPLETED)
+- [ ] Remotion project deployed to S3 (NEEDS TO BE DONE)
+- [x] API endpoints created (Phase 2 - COMPLETED)
+- [ ] Client can initiate Lambda renders (Phase 3 - IN PROGRESS)
+- [ ] Progress polling works (Phase 3 - IN PROGRESS)
+- [ ] Webhook receives completion notifications (Phase 2 - COMPLETED)
+- [ ] Scene-by-ID rendering works (Phase 4 - TODO)
+- [ ] Variable validation works (Phase 5 - TODO)
+- [ ] End-to-end test passes (Phase 6 - TODO)
+
+## Progress Status
+
+**COMPLETED:**
+
+- ✅ Phase 1: Setup Remotion Lambda Infrastructure (Tasks 1.1-1.3)
+- ✅ Phase 2: Replace Local Render Server with Lambda (Tasks 2.1-2.3)
+
+**IN PROGRESS:**
+
+- ⏳ Phase 3: Update Client to Use Lambda Rendering (Tasks 3.1-3.2)
+
+**TODO:**
+
+- ⏳ Phase 4: Create Scene-by-ID Lambda Rendering (Tasks 4.1-4.2)
+- ⏳ Phase 5: Add Variable Validation (Task 5.1)
+- ⏳ Phase 6: Testing & Documentation (Tasks 6.1-6.2)
 
 ---
 
