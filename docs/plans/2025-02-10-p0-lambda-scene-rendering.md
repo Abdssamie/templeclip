@@ -220,15 +220,15 @@
 
 ```bash
 # .env
-LAMBDA_REGION=us-east-1
-LAMBDA_FUNCTION_NAME=remotion-render-4-0
-LAMBDA_SERVE_URL=https://remotion-bucket.s3.amazonaws.com/sites/my-site
-LAMBDA_BUCKET_NAME=remotion-renders-bucket
+REMOION_FUNCTION_NAME=remotion-render-4-0
+REMOION_SERVE_URL=https://remotion-bucket.s3.amazonaws.com/sites/my-site
+REMOTION_BUCKET_NAME=remotion-renders-bucket
 WEBHOOK_SECRET=your-webhook-secret
 
-# AWS credentials (already configured)
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
+REMOTION_AWS_ACCESS_KEY_ID=
+REMOTION_AWS_SECRET_ACCESS_KEY=
+REMOTION_AWS_REGION=eu-west-3
+
 ```
 
 ---
