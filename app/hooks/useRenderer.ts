@@ -1,142 +1,93 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import axios from "axios";
-import { type TimelineDataItem, type TimelineState, FPS } from "~/components/timeline/types";
-import { apiUrl } from "~/utils/api";
-
-// TODO: NEXT DEV SPRINT - Integrate Remotion Lambda rendering
-// - Use @remotion/lambda package for AWS-based rendering
-// - Pass R2 public URLs for media assets (scrubber.publicUrl)
-// - Create export records in database after successful render
-// - Upload rendered video to R2
-// See: /home/abdssamie/.gemini/antigravity/brain/88f04e95-d9fb-4015-a20b-9636c5a5521a/r2_architecture.md
 
 export const useRenderer = () => {
   const [isRendering, setIsRendering] = useState(false);
   const [renderStatus, setRenderStatus] = useState<string>("");
+  const [progress, setProgress] = useState<number>(0);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleRenderVideo = useCallback(
     async (
-      getTimelineData: () => TimelineDataItem[],
-      timeline: TimelineState,
-      compositionWidth: number | null,
-      compositionHeight: number | null,
-      getPixelsPerSecond: () => number,
+      projectId: string,
+      scenes: Array<{
+        sceneId: string;
+        variables: Record<string, string>;
+        duration?: number;
+      }>,
+      compositionWidth: number,
+      compositionHeight: number,
+      applyElasticity?: boolean,
     ) => {
       setIsRendering(true);
       setRenderStatus("Starting render...");
-      console.log("Render server base URL:", apiUrl("/render"));
+      setProgress(0);
 
       try {
-        // Test server connection first
-        setRenderStatus("Connecting to render server...");
-        try {
-          await axios.get(apiUrl("/health"), { timeout: 5000 });
-        } catch (healthError) {
-          throw new Error("Cannot connect to render server. Make sure the server is running on http://localhost:8000");
+        // Start render
+        const response = await axios.post("/api/render", {
+          projectId,
+          scenes,
+          compositionWidth,
+          compositionHeight,
+          applyElasticity: applyElasticity !== false, // Default to true
+        });
+
+        const { renderId, bucketName } = response.data;
+        if (!renderId || !bucketName) {
+          throw new Error("Invalid response from render API: missing renderId or bucketName");
         }
 
-        const timelineData = getTimelineData();
-        // Calculate composition width if not provided
-        if (compositionWidth === null) {
-          let maxWidth = 0;
-          for (const item of timelineData) {
-            for (const scrubber of item.scrubbers) {
-              if (scrubber.media_width !== null && scrubber.media_width > maxWidth) {
-                maxWidth = scrubber.media_width;
+        // Poll progress
+        pollIntervalRef.current = setInterval(async () => {
+          try {
+            const progressRes = await axios.get(`/api/render?renderId=${renderId}&bucketName=${bucketName}`);
+            const { done, status, progress: renderProgress, outputFile, errors } = progressRes.data;
+
+            setRenderStatus(`Rendering: ${Math.round((renderProgress || 0) * 100)}%`);
+            setProgress(Math.round((renderProgress || 0) * 100));
+
+            if (done) {
+              clearInterval(pollIntervalRef.current!);
+              pollIntervalRef.current = null;
+              if (status === "completed" && outputFile) {
+                // Trigger download
+                const link = document.createElement("a");
+                link.href = outputFile;
+                link.setAttribute("download", "rendered-video.mp4");
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setRenderStatus("Video rendered and downloaded successfully!");
+              } else {
+                setRenderStatus(`Error: ${errors?.join(", ") || "Render failed"}`);
               }
+              setIsRendering(false);
             }
+          } catch (error) {
+            clearInterval(pollIntervalRef.current!);
+            pollIntervalRef.current = null;
+            setRenderStatus("Error: Failed to check render progress");
+            setIsRendering(false);
           }
-          compositionWidth = maxWidth || 1920; // Default to 1920 if no media found
-        }
-
-        // Calculate composition height if not provided
-        if (compositionHeight === null) {
-          let maxHeight = 0;
-          for (const item of timelineData) {
-            for (const scrubber of item.scrubbers) {
-              if (scrubber.media_height !== null && scrubber.media_height > maxHeight) {
-                maxHeight = scrubber.media_height;
-              }
-            }
-          }
-          compositionHeight = maxHeight || 1080; // Default to 1080 if no media found
-        }
-
-        console.log("Composition width:", compositionWidth);
-        console.log("Composition height:", compositionHeight);
-
-        if (timeline.tracks.length === 0 || timeline.tracks.every((t) => t.scrubbers.length === 0)) {
-          setRenderStatus("Error: No timeline data to render");
-          setIsRendering(false);
-          return;
-        }
-
-        setRenderStatus("Rendering video...");
-
-        const response = await axios.post(
-          apiUrl("/render"),
-          {
-            timelineData: timelineData,
-            compositionWidth: compositionWidth,
-            compositionHeight: compositionHeight,
-            durationInFrames: (() => {
-              const timelineData = getTimelineData();
-              let maxEndTime = 0;
-
-              timelineData.forEach((timelineItem) => {
-                timelineItem.scrubbers.forEach((scrubber) => {
-                  if (scrubber.endTime > maxEndTime) {
-                    maxEndTime = scrubber.endTime;
-                  }
-                });
-              });
-              console.log("Max end time:", maxEndTime * 30);
-              return Math.ceil(maxEndTime * FPS);
-            })(),
-            getPixelsPerSecond: getPixelsPerSecond(),
-          },
-          {
-            responseType: "blob",
-            timeout: 900000,
-            onDownloadProgress: (progressEvent) => {
-              if (progressEvent.lengthComputable && progressEvent.total) {
-                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                setRenderStatus(`Downloading rendered video: ${percentCompleted}%`);
-              }
-            },
-          },
-        );
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", "rendered-video.mp4");
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
-
-        setRenderStatus("Video rendered and downloaded successfully!");
+        }, 2000);
       } catch (error) {
         console.error("Render error:", error);
         if (axios.isAxiosError(error)) {
-          if (error.code === "ECONNABORTED") {
-            setRenderStatus("Error: Render timeout - try a shorter video");
-          } else if (error.response?.status === 500) {
-            setRenderStatus(`Error: ${error.response.data?.message || "Server error during rendering"}`);
-          } else if (error.request) {
-            setRenderStatus(
-              "Error: Cannot connect to render server. Make sure the backend is running on localhost:8000. Run: pnpm dlx tsx app/videorender/videorender.ts",
-            );
-          } else {
-            setRenderStatus(`Error: ${error.message}`);
-          }
+          setRenderStatus(`Error: ${error.response?.data?.message || error.message || "Failed to start render"}`);
         } else {
           setRenderStatus("Error: Unknown rendering error occurred");
         }
-      } finally {
         setIsRendering(false);
-        setTimeout(() => setRenderStatus(""), 8000); // Show error longer
       }
     },
     [],
@@ -145,6 +96,7 @@ export const useRenderer = () => {
   return {
     isRendering,
     renderStatus,
+    progress,
     handleRenderVideo,
   };
 };
