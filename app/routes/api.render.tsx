@@ -31,6 +31,42 @@ export async function action({ request }: ActionFunctionArgs) {
 	try {
 		const body = await request.json();
 
+		// Validate request body has required fields
+		if (!body || typeof body !== 'object') {
+			return Response.json(
+				{ error: 'Invalid request body' },
+				{ status: 400 }
+			);
+		}
+
+		if (!Array.isArray(body.timelineData)) {
+			return Response.json(
+				{ error: 'Missing or invalid required field: timelineData' },
+				{ status: 400 }
+			);
+		}
+
+		if (typeof body.compositionWidth !== 'number') {
+			return Response.json(
+				{ error: 'Missing or invalid required field: compositionWidth' },
+				{ status: 400 }
+			);
+		}
+
+		if (typeof body.compositionHeight !== 'number') {
+			return Response.json(
+				{ error: 'Missing or invalid required field: compositionHeight' },
+				{ status: 400 }
+			);
+		}
+
+		if (typeof body.durationInFrames !== 'number') {
+			return Response.json(
+				{ error: 'Missing or invalid required field: durationInFrames' },
+				{ status: 400 }
+			);
+		}
+
 		// Extract render input from request body
 		const renderInput: RenderInput = {
 			timelineData: body.timelineData,
@@ -42,21 +78,23 @@ export async function action({ request }: ActionFunctionArgs) {
 		// Start Lambda render (validation happens in the service)
 		const result = await startLambdaRender(renderInput);
 
-		return Response.json(
-			{
-				renderId: result.renderId,
-				bucketName: result.bucketName,
-			},
-			{ status: 200 }
-		);
+		return Response.json({
+			renderId: result.renderId,
+			bucketName: result.bucketName,
+		});
 	} catch (error) {
 		console.error('Error starting Lambda render:', error);
 
 		// Determine if this is a validation error or server error
 		const errorMessage =
 			error instanceof Error ? error.message : 'Failed to start render';
+		
+		// Check if error is from validation (more robust detection)
 		const isValidationError =
-			errorMessage.includes('Invalid') || errorMessage.includes('Must');
+			error instanceof Error &&
+			(errorMessage.startsWith('Invalid') ||
+				errorMessage.includes('Must be') ||
+				errorMessage.includes('Must not be'));
 
 		return Response.json(
 			{ error: errorMessage },
@@ -91,10 +129,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		const renderId = url.searchParams.get('renderId');
 		const bucketName = url.searchParams.get('bucketName');
 
-		// Validate query parameters
-		if (!renderId || !bucketName) {
+		// Validate query parameters (check for null, empty strings, and whitespace-only strings)
+		if (!renderId || renderId.trim() === '') {
 			return Response.json(
-				{ error: 'Missing required query parameters: renderId and bucketName' },
+				{ error: 'Missing or empty required query parameter: renderId' },
+				{ status: 400 }
+			);
+		}
+
+		if (!bucketName || bucketName.trim() === '') {
+			return Response.json(
+				{ error: 'Missing or empty required query parameter: bucketName' },
 				{ status: 400 }
 			);
 		}
@@ -102,15 +147,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		// Poll render progress (validation happens in the service)
 		const progress = await pollRenderProgress(renderId, bucketName);
 
-		return Response.json(progress, { status: 200 });
+		return Response.json(progress);
 	} catch (error) {
 		console.error('Error polling render progress:', error);
 
 		// Determine if this is a validation error or server error
 		const errorMessage =
 			error instanceof Error ? error.message : 'Failed to get render progress';
+		
+		// Check if error is from validation (more robust detection)
 		const isValidationError =
-			errorMessage.includes('Invalid') || errorMessage.includes('Must');
+			error instanceof Error &&
+			(errorMessage.startsWith('Invalid') ||
+				errorMessage.includes('Must be') ||
+				errorMessage.includes('Must not be'));
 
 		return Response.json(
 			{ error: errorMessage },
