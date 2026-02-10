@@ -17,7 +17,7 @@ import {
   type Scene,
 } from "../components/timeline/types";
 import { SortedOutlines, layerContainer, outer } from "./DragDrop";
-import { transformTimelineToData } from "~/utils/timeline-utils";
+import { transformTimelineToData } from "../utils/timeline-utils";
 
 type TimelineCompositionProps = {
   timelineData: TimelineDataItem[];
