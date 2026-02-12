@@ -35,6 +35,7 @@ import { TimelineRuler } from "~/components/timeline/TimelineRuler";
 import { TimelineTracks } from "~/components/timeline/TimelineTracks";
 import { Button } from "~/components/ui/button";
 import { ProfileMenu } from "~/components/ui/ProfileMenu";
+import { ExportMenu } from "~/components/timeline/ExportMenu";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
@@ -286,7 +287,7 @@ export default function TimelineEditor() {
     updateRulerFromPlayer,
   } = useRuler(playerRef, timelineWidth, getPixelsPerSecond());
 
-  const { isRendering, renderStatus, progress, handleRenderVideo } = useRenderer();
+  const { isRendering, renderStatus, progress, handleRenderVideo, handleRenderTimeline } = useRenderer();
 
   // Wrapper function for transition drop handler to match expected interface
   const handleDropTransitionOnTrackWrapper = (transition: Transition, trackId: string, dropLeftPx: number) => {
@@ -466,31 +467,52 @@ export default function TimelineEditor() {
   // Save timeline to server
   const handleSaveTimeline = useCallback(async () => {
     try {
-      toast.info("Saving state of the project...");
+      toast.info("Saving entire project...");
       const id = projectId || (window.location.pathname.match(/\/project\/([^/]+)/)?.[1] ?? "");
       if (!id) {
         toast.error("No project ID");
         return;
       }
-      const timelineState = getTimelineState();
-      // persist current text items alongside timeline
-      const textItemsPayload = getMediaBinItems().filter((i) => i.mediaType === "text");
-      const res = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          timeline: timelineState,
-          textBinItems: textItemsPayload,
-        }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      toast.success("Timeline saved");
+
+      const currentTimelineState = getTimelineState();
+
+      // Step 1: Update the active scene's timeline in the scenes array (if editing a scene)
+      let updatedScenes = scenes;
+      if (activeSceneId !== null) {
+        updatedScenes = scenes.map((scene) =>
+          scene.id === activeSceneId ? { ...scene, timeline: currentTimelineState } : scene,
+        );
+      }
+
+      // Step 2: Save all scenes to the database
+      const scenePromises = updatedScenes.map((scene) => updateScene(scene.id, { timeline: scene.timeline }));
+      await Promise.all(scenePromises);
+
+      // Step 3: Save the main timeline
+      const timelineToSave = activeSceneId !== null ? projectTimeline : currentTimelineState;
+      if (timelineToSave) {
+        const textItemsPayload = getMediaBinItems().filter((i) => i.mediaType === "text");
+        const res = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            timeline: timelineToSave,
+            textBinItems: textItemsPayload,
+          }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+      }
+
+      const sceneCount = updatedScenes.length;
+      toast.success(
+        `Project saved successfully! (Main timeline + ${sceneCount} scene${sceneCount !== 1 ? "s" : ""})`,
+      );
     } catch (e) {
       console.error(e);
-      toast.error("Failed to save");
+      toast.error("Failed to save project");
     }
-  }, [getMediaBinItems, getTimelineState, projectId]);
+  }, [getMediaBinItems, getTimelineState, projectId, activeSceneId, updateScene, projectTimeline, scenes]);
 
   // Global Ctrl/Cmd+S to save timeline (registered after handler is defined)
   useEffect(() => {
@@ -568,54 +590,6 @@ export default function TimelineEditor() {
     },
     [handleAddMediaToBin],
   );
-
-  const buildSceneRenderRequests = useCallback(() => {
-    const requests: Array<{
-      sceneId: string;
-      variables: Record<string, string>;
-      duration?: number;
-    }> = [];
-
-    // Extract scene scrubbers from timeline
-    const timelineData = getTimelineData();
-    for (const item of timelineData) {
-      for (const scrubber of item.scrubbers) {
-        if (scrubber.mediaType === "scene" && "sceneId" in scrubber) {
-          requests.push({
-            sceneId: scrubber.sceneId,
-            variables: "variables" in scrubber ? scrubber.variables : {},
-            duration: scrubber.duration,
-          });
-        }
-      }
-    }
-
-    return requests;
-  }, [getTimelineData]);
-
-  const handleRenderClick = useCallback(() => {
-    if (!projectId) {
-      toast.error("No project ID found");
-      return;
-    }
-
-    const sceneRequests = buildSceneRenderRequests();
-
-    if (sceneRequests.length === 0) {
-      toast.error("No scenes to render. Add scenes to the timeline first!");
-      return;
-    }
-
-    handleRenderVideo(
-      projectId,
-      sceneRequests,
-      isAutoSize ? 1920 : width,
-      isAutoSize ? 1080 : height,
-      true, // applyElasticity
-    );
-
-    toast.info("Starting render...");
-  }, [projectId, buildSceneRenderRequests, handleRenderVideo, width, height, isAutoSize]);
 
   const handleLogTimelineData = useCallback(() => {
     if (timelineData.length === 0) {
@@ -955,15 +929,23 @@ export default function TimelineEditor() {
             Import
           </Button>
 
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleRenderClick}
-            disabled={isRendering}
-            className="h-7 px-2 text-xs">
-            <Download className="h-3 w-3 mr-1" />
-            {isRendering ? "Rendering..." : "Export"}
-          </Button>
+          <ExportMenu
+            projectId={projectId || ""}
+            scenes={scenes}
+            isRendering={isRendering}
+            activeSceneId={activeSceneId}
+            projectTimeline={projectTimeline}
+            getTimelineData={getTimelineData}
+            getTimelineState={getTimelineState}
+            setTimelineFromServer={setTimelineFromServer}
+            updateScene={updateScene}
+            durationInFrames={durationInFrames}
+            width={width}
+            height={height}
+            isAutoSize={isAutoSize}
+            onRenderTimeline={handleRenderTimeline}
+            onRenderScenes={handleRenderVideo}
+          />
 
           {/* Auth status — keep avatar as the last item (right corner) */}
           {user ? (
@@ -997,11 +979,10 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${
-                location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
-                  ? "bg-background text-primary"
-                  : "text-muted-foreground"
-              }`}
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
+                ? "bg-background text-primary"
+                : "text-muted-foreground"
+                }`}
               onClick={() => openSection("media-bin")}
               title="Media Bin">
               <File className="h-5 w-5" />
@@ -1009,9 +990,8 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${
-                location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
-              }`}
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
+                }`}
               onClick={() => openSection("text-editor")}
               title="Text Editor">
               <Type className="h-5 w-5" />
@@ -1019,9 +999,8 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${
-                location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
-              }`}
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
+                }`}
               onClick={() => openSection("transitions")}
               title="Transitions">
               <BetweenVerticalEnd className="h-5 w-5" />
