@@ -73,7 +73,7 @@ export async function action({ request }: { request: Request }) {
       await pool.end();
     }
 
-    const presignedUrl = await getPresignedUploadUrl(userId, assetId, filename);
+    const presignedUrl = await getPresignedUploadUrl(userId, assetId, filename, mimeType);
 
     const response = PresignedUploadResponseSchema.parse({
       presignedUrl,
