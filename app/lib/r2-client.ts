@@ -30,7 +30,7 @@ if (!CLOUDFLARE_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
 }
 
 // Initialize R2 client with S3-compatible configuration
-// Using path-style URLs to match the S3 API endpoint format and ensure CORS works correctly
+// Using virtual-hosted style URLs (default) for proper signature validation
 const r2Client = new S3Client({
   region: "auto", // R2 uses 'auto' for region
   endpoint: CLOUDFLARE_ACCOUNT_ID ? `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com` : undefined,
@@ -38,9 +38,6 @@ const r2Client = new S3Client({
     accessKeyId: R2_ACCESS_KEY_ID || "",
     secretAccessKey: R2_SECRET_ACCESS_KEY || "",
   },
-  // Force path-style URLs (accountId.r2.cloudflarestorage.com/bucket/key)
-  // This matches the S3 API endpoint shown in R2 dashboard and ensures CORS works
-  forcePathStyle: true,
   // Disable automatic checksums which cause CORS issues with presigned URLs
   requestChecksumCalculation: "WHEN_REQUIRED",
   responseChecksumValidation: "WHEN_REQUIRED",
