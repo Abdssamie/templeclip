@@ -294,25 +294,32 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
 
         // Upload directly to R2
         try {
-          await axios.put(presignedUrl, file, {
-            headers: { "Content-Type": file.type },
-            onUploadProgress: (progressEvent) => {
-              if (progressEvent.total) {
+          // Use XMLHttpRequest directly to avoid axios adding extra headers that break CORS
+          await new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("PUT", presignedUrl, true);
+            xhr.setRequestHeader("Content-Type", file.type);
+            xhr.upload.onprogress = (progressEvent) => {
+              if (progressEvent.lengthComputable) {
                 const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                 console.log(`Upload progress: ${percentCompleted}%`);
                 setMediaBinItems((prev) =>
                   prev.map((item) => (item.id === tempId ? { ...item, uploadProgress: percentCompleted } : item)),
                 );
               }
-            },
+            };
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                resolve();
+              } else {
+                reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+              }
+            };
+            xhr.onerror = () => reject(new Error("Network error during upload"));
+            xhr.send(file);
           });
         } catch (r2Error) {
           console.error("R2 upload failed:", r2Error);
-          if (axios.isAxiosError(r2Error)) {
-            console.error("R2 upload error response:", r2Error.response?.data);
-            console.error("R2 upload error status:", r2Error.response?.status);
-            console.error("R2 upload error headers:", r2Error.response?.headers);
-          }
           throw r2Error;
         }
 
