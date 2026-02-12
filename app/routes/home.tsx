@@ -29,7 +29,7 @@ import { MuteButton, FullscreenButton } from "~/components/ui/video-controls";
 
 // Components
 import LeftPanel from "~/components/editor/LeftPanel";
-import { VideoPlayer } from "~/components/editor/video-compositions/VideoPlayer";
+import { VideoPlayer } from "~/components/video-compositions/VideoPlayer";
 import { RenderStatus } from "~/components/timeline/RenderStatus";
 import { TimelineRuler } from "~/components/timeline/TimelineRuler";
 import { TimelineTracks } from "~/components/timeline/TimelineTracks";
