@@ -1,7 +1,7 @@
 import { requireUserId } from "~/lib/auth.utils";
 import { z } from "zod";
 import { AssetsResponseSchema, RegisterAssetBodySchema, CloneAssetBodySchema } from "~/schemas";
-import { insertAsset, listAssetsByUser, getAssetById, softDeleteAsset } from "~/lib/assets.repo";
+import { insertAsset, listAssetsByUser, getAssetById, softDeleteAsset } from "~/lib/assets.repo.server";
 import path from "path";
 import { deleteFromR2, copyInR2, getPresignedDownloadUrl, generateR2Key, R2_BUCKET_NAME } from "~/lib/r2-client";
 import { redirect } from "react-router";

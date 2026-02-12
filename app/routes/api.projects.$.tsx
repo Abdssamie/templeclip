@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { MediaBinItem, Scene, TimelineState } from "~/components/timeline/types";
-import { listAssetsByUser, softDeleteAsset } from "~/lib/assets.repo";
+import { listAssetsByUser, softDeleteAsset } from "~/lib/assets.repo.server";
 import { requireUserId } from "~/lib/auth.utils";
 import {
   createProject,
