@@ -57,7 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body className="min-h-screen font-sans antialiased">
         <ThemeProvider>
           <main className="min-h-screen w-full overflow-x-hidden">{children}</main>
-          <Toaster position="top-right" expand={false} richColors closeButton />
+          <Toaster position="bottom-right" expand={false} richColors closeButton />
           <ScrollRestoration />
           <Scripts />
         </ThemeProvider>

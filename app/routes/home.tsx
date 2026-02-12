@@ -943,6 +943,7 @@ export default function TimelineEditor() {
             width={width}
             height={height}
             isAutoSize={isAutoSize}
+            onSave={handleSaveTimeline}
             onRenderTimeline={handleRenderTimeline}
             onRenderScenes={handleRenderVideo}
           />

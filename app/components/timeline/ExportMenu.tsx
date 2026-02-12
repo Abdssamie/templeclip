@@ -27,6 +27,8 @@ interface ExportMenuProps {
     width: number;
     height: number;
     isAutoSize: boolean;
+    // Save handler
+    onSave: () => Promise<void>;
     // Render handlers
     onRenderTimeline: (
         timelineData: TimelineDataItem[],
@@ -57,10 +59,14 @@ export function ExportMenu({
     width,
     height,
     isAutoSize,
+    onSave,
     onRenderTimeline,
     onRenderScenes,
 }: ExportMenuProps) {
     const handleExportTimeline = async () => {
+        // Auto-save the project before exporting
+        await onSave();
+
         // If we're editing a scene, save it first and switch to main timeline
         if (activeSceneId !== null) {
             const currentScene = scenes.find((s) => s.id === activeSceneId);
@@ -87,7 +93,10 @@ export function ExportMenu({
         toast.info("Starting timeline render...");
     };
 
-    const handleExportAllScenes = () => {
+    const handleExportAllScenes = async () => {
+        // Auto-save the project before exporting
+        await onSave();
+
         if (!projectId || projectId === "") {
             toast.error("No project ID found");
             return;
@@ -109,7 +118,10 @@ export function ExportMenu({
         toast.info(`Starting render of ${scenes.length} scene${scenes.length > 1 ? "s" : ""}...`);
     };
 
-    const handleExportSingleScene = (scene: Scene) => {
+    const handleExportSingleScene = async (scene: Scene) => {
+        // Auto-save the project before exporting
+        await onSave();
+
         if (!projectId || projectId === "") {
             toast.error("No project ID found");
             return;
