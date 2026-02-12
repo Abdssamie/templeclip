@@ -21,6 +21,7 @@ export default [
   route("/api/r2/presigned-upload", "routes/api.r2.presigned-upload.tsx"),
   route("/api/r2/presigned-download", "routes/api.r2.presigned-download.tsx"),
   route("/api/r2/confirm-upload", "routes/api.r2.confirm-upload.tsx"),
+  route("/api/render", "routes/api.render.tsx"),
   route("/learn", "routes/learn.tsx"),
   route("/roadmap", "routes/roadmap.tsx"),
   route("/privacy", "routes/privacy.tsx"),
