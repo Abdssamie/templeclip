@@ -68,8 +68,8 @@ export async function listAssetsByUser(userId: string, projectId: string | null)
   try {
     const query =
       projectId === null
-        ? `select * from assets where user_id = $1 and project_id is null and deleted_at is null order by created_at desc`
-        : `select * from assets where user_id = $1 and project_id = $2 and deleted_at is null order by created_at desc`;
+        ? `select * from assets where user_id = $1 and project_id is null and deleted_at is null and upload_status = 'completed' order by created_at desc`
+        : `select * from assets where user_id = $1 and project_id = $2 and deleted_at is null and upload_status = 'completed' order by created_at desc`;
     const params = projectId === null ? [userId] : [userId, projectId];
     const { rows } = await client.query<AssetRecord>(query, params);
     return rows;
@@ -95,6 +95,18 @@ export async function softDeleteAsset(id: string, userId: string): Promise<void>
       id,
       userId,
     ]);
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Hard delete an asset record (used for cleanup of failed uploads)
+ */
+export async function deleteAssetRecord(id: string, userId: string): Promise<void> {
+  const client = await getPool().connect();
+  try {
+    await client.query(`delete from assets where id = $1 and user_id = $2`, [id, userId]);
   } finally {
     client.release();
   }

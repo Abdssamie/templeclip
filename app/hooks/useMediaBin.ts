@@ -293,18 +293,28 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
         const { presignedUrl, assetId, r2Key } = presignedRes.data;
 
         // Upload directly to R2
-        await axios.put(presignedUrl, file, {
-          headers: { "Content-Type": file.type },
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              console.log(`Upload progress: ${percentCompleted}%`);
-              setMediaBinItems((prev) =>
-                prev.map((item) => (item.id === tempId ? { ...item, uploadProgress: percentCompleted } : item)),
-              );
-            }
-          },
-        });
+        try {
+          await axios.put(presignedUrl, file, {
+            headers: { "Content-Type": file.type },
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                console.log(`Upload progress: ${percentCompleted}%`);
+                setMediaBinItems((prev) =>
+                  prev.map((item) => (item.id === tempId ? { ...item, uploadProgress: percentCompleted } : item)),
+                );
+              }
+            },
+          });
+        } catch (r2Error) {
+          console.error("R2 upload failed:", r2Error);
+          if (axios.isAxiosError(r2Error)) {
+            console.error("R2 upload error response:", r2Error.response?.data);
+            console.error("R2 upload error status:", r2Error.response?.status);
+            console.error("R2 upload error headers:", r2Error.response?.headers);
+          }
+          throw r2Error;
+        }
 
         // Confirm upload
         await axios.post(apiUrl("/api/r2/confirm-upload", false, true), { assetId }, { withCredentials: true });
