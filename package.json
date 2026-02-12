@@ -84,9 +84,11 @@
     "@types/react-dom": "^19.1.7",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.32.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^26.1.0",
     "multer": "^2.0.2",
     "prettier": "^3.3.3",
     "tailwindcss": "^4.1.11",
@@ -95,6 +97,7 @@
     "tw-animate-css": "^1.3.6",
     "typescript": "^5.8.3",
     "vite": "^7.0.6",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.18"
   }
 }

@@ -18,6 +18,7 @@ import {
 } from "../components/timeline/types";
 import { SortedOutlines, layerContainer, outer } from "./DragDrop";
 import { transformTimelineToData } from "../utils/timeline-utils";
+import { getAllTransitions } from "~/utils/video-player-utils";
 
 type TimelineCompositionProps = {
   timelineData: TimelineDataItem[];
@@ -125,7 +126,7 @@ export function TimelineComposition({
   // Resolve pixels per second based on rendering mode
   const resolvedPixelsPerSecond = typeof getPixelsPerSecond === "function" ? getPixelsPerSecond() : getPixelsPerSecond;
   // Get all transitions from timelineData
-  const allTransitions = timelineData[0].transitions;
+  const allTransitions = getAllTransitions(timelineData);
 
   // Create a map of scenes for faster lookup (O(1))
   const sceneMap = useMemo(() => {

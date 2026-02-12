@@ -25,7 +25,7 @@ pnpm format:check    # Check formatting
 pnpm migrate
 ```
 
-**Package Manager:** Use `pnpm` (NOT npm). Lock file is `pnpm-lock.yaml`.
+**Package Manager:** Use `pnpm` (NOT npm). Lock file is `pnpm-lock.yaml`. When adding dependencies, use the latest available version unless a specific version is required.
 
 ## Code Style
 
