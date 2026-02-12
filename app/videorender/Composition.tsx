@@ -1,5 +1,5 @@
 import { Composition, getInputProps } from "remotion";
-import { TimelineComposition } from "../video-compositions/VideoPlayer";
+import { TimelineComposition } from "../components/editor/video-compositions/VideoPlayer";
 
 export default function RenderComposition() {
   const inputProps = getInputProps();
@@ -53,9 +53,9 @@ export default function RenderComposition() {
         ],
         isRendering: false,
         selectedItem: null,
-        setSelectedItem: () => {},
+        setSelectedItem: () => { },
         timeline: { tracks: [] },
-        handleUpdateScrubber: () => {},
+        handleUpdateScrubber: () => { },
         getPixelsPerSecond: () => 100,
       }}
     />

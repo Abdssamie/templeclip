@@ -1,5 +1,5 @@
 import { Player, type PlayerRef } from "@remotion/player";
-import { Sequence, AbsoluteFill, Img, Video, Audio } from "remotion";
+import { Sequence, AbsoluteFill, Img, Video, Audio, Html5Video, Html5Audio } from "remotion";
 import { linearTiming, springTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { iris } from "@remotion/transitions/iris";
@@ -15,9 +15,9 @@ import {
   type TimelineState,
   type Transition,
   type Scene,
-} from "../components/timeline/types";
+} from "../../timeline/types";
 import { SortedOutlines, layerContainer, outer } from "./DragDrop";
-import { transformTimelineToData } from "../utils/timeline-utils";
+import { transformTimelineToData } from "../../../utils/timeline-utils";
 import { getAllTransitions } from "~/utils/video-player-utils";
 
 type TimelineCompositionProps = {
@@ -86,7 +86,7 @@ const SafeVideo = (props: React.ComponentProps<typeof Video>) => {
   const [error, setError] = React.useState(false);
   if (error) return <MediaMissingFallback />;
   return (
-    <Video
+    <Html5Video
       {...props}
       onError={(e) => {
         console.warn(`[VideoPlayer] Video load failed: ${props.src}`);
@@ -101,7 +101,7 @@ const SafeAudio = (props: React.ComponentProps<typeof Audio>) => {
   const [error, setError] = React.useState(false);
   if (error) return null;
   return (
-    <Audio
+    <Html5Audio
       {...props}
       onError={(e) => {
         console.warn(`[VideoPlayer] Audio load failed: ${props.src}`);
@@ -325,9 +325,9 @@ export function TimelineComposition({
                 // Recursive call for nested structure
                 isRendering={isRendering}
                 selectedItem={null} // Don't select items inside nested scenes
-                setSelectedItem={() => {}} // No-op for nested selection
+                setSelectedItem={() => { }} // No-op for nested selection
                 timeline={scene.timeline} // Pass scene timeline
-                handleUpdateScrubber={() => {}} // No-op for nested updates (read-only)
+                handleUpdateScrubber={() => { }} // No-op for nested updates (read-only)
                 getPixelsPerSecond={PIXELS_PER_SECOND} // Use standard PPS for internal relative sizing
                 variableValues={mergedVariables}
                 scenes={scenes} // Pass scene context down for deeper recursion

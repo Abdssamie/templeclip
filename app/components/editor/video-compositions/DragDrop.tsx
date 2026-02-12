@@ -6,7 +6,7 @@ import {
   type ScrubberState,
   type TimelineState,
   type TrackState,
-} from "../components/timeline/types";
+} from "../../timeline/types";
 
 const HANDLE_SIZE = 10;
 

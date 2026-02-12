@@ -30,15 +30,15 @@ export const PresignedUploadBodySchema = z.object({
  * Generate a presigned URL for downloading a file from R2
  */
 export const PresignedDownloadQuerySchema = z.object({
-  assetId: z.string().uuid(),
+  assetId: z.uuid(),
 });
 
 /**
  * Response: Presigned upload URL
  */
 export const PresignedUploadResponseSchema = z.object({
-  presignedUrl: z.string().url(),
-  assetId: z.string().uuid(),
+  presignedUrl: z.url(),
+  assetId: z.uuid(),
   r2Key: z.string(),
   expiresIn: z.number().int().positive(),
 });
@@ -47,7 +47,7 @@ export const PresignedUploadResponseSchema = z.object({
  * Response: Presigned download URL
  */
 export const PresignedDownloadResponseSchema = z.object({
-  presignedUrl: z.string().url(),
+  presignedUrl: z.url(),
   expiresIn: z.number().int().positive(),
 });
 
@@ -57,7 +57,7 @@ export const PresignedDownloadResponseSchema = z.object({
 export const ConfirmUploadResponseSchema = z.object({
   success: z.literal(true),
   asset: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     originalName: z.string(),
     mimeType: z.string(),
     sizeBytes: z.number().int(),
