@@ -4,6 +4,7 @@ import { startLambdaRender, pollRenderProgress, type RenderInput } from "~/servi
 import { getProjectScenes } from "~/lib/projects.repo";
 import { applyElasticityToTimeline } from "~/utils/elasticity";
 import { buildTimelineFromScenes, type SceneRenderRequest } from "~/utils/timeline-builder.server";
+import { resolveR2UrlsInTimeline } from "~/utils/resolve-r2-urls.server";
 
 /**
  * POST /api/render
@@ -75,6 +76,14 @@ export async function action({ request }: ActionFunctionArgs) {
         applyElasticityToTimeline(timelineData, projectScenes);
       }
 
+      // Resolve R2 URLs for Lambda access (24 hours expiration for long renders)
+      console.log("Resolving R2 URLs for Lambda rendering...");
+      const resolvedTimelineData = await resolveR2UrlsInTimeline(
+        timelineData,
+        projectScenes,
+        86400 // 24 hours
+      );
+
       // Calculate final duration in frames (FPS = 30)
       const finalDurationInFrames = Math.ceil(totalDuration * 30);
 
@@ -86,7 +95,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // Start Lambda render
       const result = await startLambdaRender({
-        timelineData,
+        timelineData: resolvedTimelineData,
         compositionWidth,
         compositionHeight,
         durationInFrames: finalDurationInFrames,
@@ -98,6 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
         renderId: result.renderId,
         bucketName: result.bucketName,
       });
+
     } else {
       // Legacy timeline-based render request
       if (!Array.isArray(body.timelineData)) {
@@ -116,9 +126,17 @@ export async function action({ request }: ActionFunctionArgs) {
         return Response.json({ error: "Missing or invalid required field: durationInFrames" }, { status: 400 });
       }
 
+      // Resolve R2 URLs for Lambda access
+      console.log("Resolving R2 URLs for Lambda rendering (legacy timeline)...");
+      const resolvedTimelineData = await resolveR2UrlsInTimeline(
+        body.timelineData,
+        [], // No scenes for legacy requests
+        86400 // 24 hours
+      );
+
       // Extract render input from request body
       const renderInput: RenderInput = {
-        timelineData: body.timelineData,
+        timelineData: resolvedTimelineData,
         compositionWidth: body.compositionWidth,
         compositionHeight: body.compositionHeight,
         durationInFrames: body.durationInFrames,
