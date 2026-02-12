@@ -20,7 +20,7 @@ const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.R
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "kimu-media";
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL; // Optional custom domain
+// Note: R2_PUBLIC_URL removed - use presigned URLs instead for secure access
 
 // Validate required environment variables
 if (!CLOUDFLARE_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
@@ -30,6 +30,7 @@ if (!CLOUDFLARE_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
 }
 
 // Initialize R2 client with S3-compatible configuration
+// Using path-style URLs to match the S3 API endpoint format and ensure CORS works correctly
 const r2Client = new S3Client({
   region: "auto", // R2 uses 'auto' for region
   endpoint: CLOUDFLARE_ACCOUNT_ID ? `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com` : undefined,
@@ -37,6 +38,12 @@ const r2Client = new S3Client({
     accessKeyId: R2_ACCESS_KEY_ID || "",
     secretAccessKey: R2_SECRET_ACCESS_KEY || "",
   },
+  // Force path-style URLs (accountId.r2.cloudflarestorage.com/bucket/key)
+  // This matches the S3 API endpoint shown in R2 dashboard and ensures CORS works
+  forcePathStyle: true,
+  // Disable automatic checksums which cause CORS issues with presigned URLs
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 /**
@@ -52,6 +59,7 @@ export async function getPresignedUploadUrl(
   userId: string,
   assetId: string,
   filename: string,
+  contentType?: string,
   expiresIn: number = 900, // 15 minutes
 ): Promise<string> {
   const key = `${userId}/${assetId}/${filename}`;
@@ -59,9 +67,16 @@ export async function getPresignedUploadUrl(
   const command = new PutObjectCommand({
     Bucket: R2_BUCKET_NAME,
     Key: key,
+    ContentType: contentType,
+    // Disable automatic checksum calculation to avoid CORS issues
+    ChecksumAlgorithm: undefined,
   });
 
-  const presignedUrl = await getSignedUrl(r2Client, command, { expiresIn });
+  const presignedUrl = await getSignedUrl(r2Client, command, {
+    expiresIn,
+    // Don't sign headers that won't be sent by the browser
+    unhoistableHeaders: new Set(),
+  });
   return presignedUrl;
 }
 
@@ -184,21 +199,17 @@ export function generateR2Key(userId: string, assetId: string, filename: string)
  * Generate public R2 URL for an asset
  *
  * @param r2Key - R2 object key
- * @returns Public URL (uses custom domain if configured, otherwise R2 default)
+ * @returns Public URL (uses path-style format to match S3 API endpoint)
+ * @deprecated Use getPresignedDownloadUrl instead for secure access
  */
 export function getPublicR2Url(r2Key: string): string {
-  if (R2_PUBLIC_URL) {
-    // Use custom public domain (e.g., https://bucket.tripixir.com)
-    return `${R2_PUBLIC_URL}/${r2Key}`;
-  }
-
-  // Fallback to R2 default public URL format
-  // Note: Bucket must have public access enabled for this to work
+  // Using path-style URL format: accountId.r2.cloudflarestorage.com/bucket/key
+  // This matches the S3 API endpoint and ensures CORS compatibility
   if (CLOUDFLARE_ACCOUNT_ID) {
-    return `https://${R2_BUCKET_NAME}.${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${r2Key}`;
+    return `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET_NAME}/${r2Key}`;
   }
 
-  throw new Error("Cannot generate public R2 URL: missing R2_PUBLIC_URL or CLOUDFLARE_ACCOUNT_ID");
+  throw new Error("Cannot generate public R2 URL: missing CLOUDFLARE_ACCOUNT_ID");
 }
 
 /**
@@ -210,4 +221,4 @@ export function isR2Configured(): boolean {
   return !!(CLOUDFLARE_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY);
 }
 
-export { r2Client, R2_BUCKET_NAME, R2_PUBLIC_URL };
+export { r2Client, R2_BUCKET_NAME };
