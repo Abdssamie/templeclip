@@ -35,7 +35,7 @@ import { resolveR2UrlsInTimeline } from "~/utils/resolve-r2-urls.server";
  */
 export async function action({ request }: ActionFunctionArgs) {
   // Require authentication
-  await requireUserId(request);
+  const userId = await requireUserId(request);
 
   try {
     const body = await request.json();
@@ -79,6 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // Resolve R2 URLs for Lambda access (24 hours expiration for long renders)
       console.log("Resolving R2 URLs for Lambda rendering...");
       const resolvedTimelineData = await resolveR2UrlsInTimeline(
+        userId,
         timelineData,
         projectScenes,
         86400 // 24 hours
@@ -129,6 +130,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // Resolve R2 URLs for Lambda access
       console.log("Resolving R2 URLs for Lambda rendering (legacy timeline)...");
       const resolvedTimelineData = await resolveR2UrlsInTimeline(
+        userId,
         body.timelineData,
         [], // No scenes for legacy requests
         86400 // 24 hours

@@ -16,11 +16,13 @@ function extractAssetIdFromUrl(url: string | null): string | null {
 /**
  * Resolve a single media URL to an R2 presigned URL
  * @param mediaUrl - Original media URL (may be server-relative or already resolved)
+ * @param userId - User ID for ownership verification
  * @param expiresIn - Presigned URL expiration in seconds
  * @returns R2 presigned URL or original URL if not resolvable
  */
 async function resolveMediaUrl(
     mediaUrl: string | null,
+    userId: string,
     expiresIn: number,
     urlCache: Map<string, string>
 ): Promise<string | null> {
@@ -51,6 +53,12 @@ async function resolveMediaUrl(
             return mediaUrl;
         }
 
+        // SECURITY: Verify asset ownership
+        if (asset.user_id !== userId) {
+            console.warn(`Access denied: User ${userId} attempted to access asset ${assetId} owned by ${asset.user_id}`);
+            return mediaUrl; // Return original URL without resolving
+        }
+
         // Generate presigned download URL
         const presignedUrl = await getPresignedDownloadUrl(asset.r2_key, expiresIn);
 
@@ -67,12 +75,14 @@ async function resolveMediaUrl(
 /**
  * Recursively resolve all asset URLs in timeline data to R2 presigned URLs
  * 
+ * @param userId - User ID for ownership verification (SECURITY)
  * @param timelineData - Timeline data with potential asset references
  * @param scenes - Scene definitions for recursive scene resolution
  * @param expiresIn - Presigned URL expiration in seconds (default: 24 hours for long renders)
  * @returns Timeline data with resolved R2 URLs
  */
 export async function resolveR2UrlsInTimeline(
+    userId: string,
     timelineData: TimelineDataItem[],
     scenes: Scene[] = [],
     expiresIn: number = 86400 // 24 hours
@@ -88,6 +98,7 @@ export async function resolveR2UrlsInTimeline(
         if (scrubber.mediaUrlRemote) {
             resolved.mediaUrlRemote = await resolveMediaUrl(
                 scrubber.mediaUrlRemote,
+                userId,
                 expiresIn,
                 urlCache
             );
@@ -130,7 +141,7 @@ export async function resolveR2UrlsInTimeline(
                 }];
 
                 // Recursively resolve the scene's timeline
-                await resolveR2UrlsInTimeline(sceneTimelineData, scenes, expiresIn);
+                await resolveR2UrlsInTimeline(userId, sceneTimelineData, scenes, expiresIn);
             }
         }
 
