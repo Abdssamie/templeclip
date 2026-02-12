@@ -4,9 +4,11 @@ Thumbs.db
 *.swp
 *.swo
 
+.wrangler/
+.worktrees/
+
 # Dependencies
 /node_modules/
-.wrangler/
 .pnpm-store
 __pycache__/
 *.py[cod]
