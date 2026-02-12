@@ -6,3 +6,4 @@ export * from "./apis/assets";
 export * from "./apis/projects";
 export * from "./apis/params";
 export * from "./apis/scenes";
+export * from "./apis/r2";
