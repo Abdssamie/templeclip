@@ -21,7 +21,7 @@ export const PresignedUploadBodySchema = z.object({
   sizeBytes: z.number().int().positive(),
   width: opt(z.number().int().positive()),
   height: opt(z.number().int().positive()),
-  durationSeconds: opt(z.number().positive()),
+  durationSeconds: opt(z.number().nonnegative()),
   projectId: opt(z.string().uuid()),
 });
 
