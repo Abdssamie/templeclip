@@ -15,9 +15,9 @@ import {
   type TimelineState,
   type Transition,
   type Scene,
-} from "../../timeline/types";
+} from "../timeline/types";
 import { SortedOutlines, layerContainer, outer } from "./DragDrop";
-import { transformTimelineToData } from "../../../utils/timeline-utils";
+import { transformTimelineToData } from "../../utils/timeline-utils";
 import { getAllTransitions } from "~/utils/video-player-utils";
 
 type TimelineCompositionProps = {
