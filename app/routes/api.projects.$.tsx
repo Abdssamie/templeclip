@@ -1,6 +1,4 @@
-import fs from "fs";
 import { Pool } from "pg";
-import path from "path";
 import type { MediaBinItem, Scene, TimelineState } from "~/components/timeline/types";
 import { listAssetsByUser, softDeleteAsset } from "~/lib/assets.repo.server";
 import { requireUserId } from "~/lib/auth.utils";
@@ -63,29 +61,12 @@ export async function loader({ request }: { request: Request }) {
       const assets = await listAssetsByUser(userId, id);
       await Promise.all(
         assets.map(async (a) => {
-          // Remove file from out/
+          // Remove file from database but it is still in r2 until a separate cleanup job runs
           try {
-            // Validate storage_key to prevent path traversal
-            if (!a.storage_key || typeof a.storage_key !== "string") {
-              console.error("Invalid storage key");
-              return;
-            }
-            // Sanitize the storage key to prevent path traversal
-            const sanitizedKey = path.basename(a.storage_key);
-            const filePath = path.resolve("out", sanitizedKey);
-            if (filePath.startsWith(path.resolve("out"))) {
-              try {
-                await fs.promises.unlink(filePath);
-              } catch (e) {
-                if ((e as { code?: string }).code !== "ENOENT") {
-                  console.error("Failed to delete asset", e);
-                }
-              }
-            }
+            await softDeleteAsset(a.id, userId);
           } catch {
             console.error("Failed to delete asset");
           }
-          await softDeleteAsset(a.id, userId);
         }),
       );
     } catch {
@@ -94,12 +75,7 @@ export async function loader({ request }: { request: Request }) {
 
     const ok = await deleteProjectById(id, userId);
     if (!ok) return new Response("Not Found", { status: 404 });
-    // remove timeline file if exists
-    try {
-      await fs.promises.unlink(path.resolve(process.env.TIMELINE_DIR || "project_data", `${id}.json`));
-    } catch {
-      console.error("Failed to delete timeline file");
-    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -138,25 +114,10 @@ export async function action({ request }: { request: Request }) {
       await Promise.all(
         assets.map(async (a) => {
           try {
-            if (!a.storage_key || typeof a.storage_key !== "string") {
-              console.error("Invalid storage key");
-              return;
-            }
-            const sanitizedKey = path.basename(a.storage_key);
-            const filePath = path.resolve("out", sanitizedKey);
-            if (filePath.startsWith(path.resolve("out"))) {
-              try {
-                await fs.promises.unlink(filePath);
-              } catch (e) {
-                if ((e as { code?: string }).code !== "ENOENT") {
-                  console.error("Failed to delete asset", e);
-                }
-              }
-            }
+            await softDeleteAsset(a.id, userId);
           } catch {
             console.error("Failed to delete asset");
           }
-          await softDeleteAsset(a.id, userId);
         }),
       );
     } catch {

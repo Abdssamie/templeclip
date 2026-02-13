@@ -50,7 +50,6 @@ export async function action({ request }: { request: Request }) {
     try {
       await pool.query(
         `insert into assets (
-          id, user_id, original_name, storage_key, mime_type, size_bytes,
           width, height, duration_seconds, project_id,
           r2_bucket, r2_key, upload_status, created_at
         ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,

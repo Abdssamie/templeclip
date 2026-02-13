@@ -6,7 +6,6 @@ export type AssetRecord = {
   user_id: string;
   project_id: string | null;
   original_name: string;
-  storage_key: string;
   mime_type: string;
   size_bytes: number;
   width: number | null;
@@ -39,15 +38,14 @@ export async function insertAsset(params: {
   try {
     const id = params.id || crypto.randomUUID();
     const { rows } = await client.query<AssetRecord>(
-      `insert into assets (id, user_id, project_id, original_name, storage_key, mime_type, size_bytes, width, height, duration_seconds, r2_key, r2_bucket)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      `insert into assets (id, user_id, project_id, original_name, mime_type, size_bytes, width, height, duration_seconds, r2_key, r2_bucket)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        returning *`,
       [
         id,
         params.userId,
         params.projectId ?? null,
         params.originalName,
-        params.storageKey,
         params.mimeType,
         params.sizeBytes,
         params.width ?? null,

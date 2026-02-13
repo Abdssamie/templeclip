@@ -3,7 +3,6 @@ create table if not exists assets (
   id uuid primary key,
   user_id text not null,
   original_name text not null,
-  storage_key text not null,
   mime_type text not null,
   size_bytes bigint not null,
   width int null,

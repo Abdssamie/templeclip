@@ -30,4 +30,3 @@ create index if not exists idx_assets_upload_status on assets(upload_status) whe
 comment on column assets.r2_bucket is 'Cloudflare R2 bucket name (null for local storage)';
 comment on column assets.r2_key is 'R2 object key in format: userId/assetId/filename';
 comment on column assets.upload_status is 'Upload status: pending, uploading, completed, failed';
-comment on column assets.storage_key is 'Legacy local storage path (deprecated, use r2_key for new uploads)';
