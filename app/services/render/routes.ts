@@ -39,13 +39,8 @@ export function setupRoutes(app: express.Express) {
       return res.status(400).json({ error: "Invalid request data", details: validation.error.issues });
     }
 
-    const input = req.body;
-    if (!input.timelineData || !input.compositionWidth || !input.compositionHeight || !input.durationInFrames) {
-      return jsonError(res, "Missing required fields", 400);
-    }
-
     try {
-      const job = await renderQueue.add("render-video", input, { jobId: crypto.randomUUID() });
+      const job = await renderQueue.add("render-video", validation.data, { jobId: crypto.randomUUID() });
       if (!job.id) {
         return jsonError(res, "Failed to create job", 500);
       }
@@ -59,6 +54,8 @@ export function setupRoutes(app: express.Express) {
 
   app.get("/render/:jobId", async (req, res) => {
     const { jobId } = req.params;
+    
+    
 
     const cached = jobStatusCache.get(jobId);
     if (cached) {

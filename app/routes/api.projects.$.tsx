@@ -47,7 +47,6 @@ export async function loader({ request }: { request: Request }) {
       scenes: proj?.scenes,
     });
 
-    console.log("Loaded project", id, "with scenes", proj?.scenes.length);
     return new Response(JSON.stringify(payload), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 

@@ -183,7 +183,7 @@ export async function action({ request }: { request: Request }) {
       userId,
       projectId: asset.project_id ?? null,
       originalName: `${asset.original_name} ${suffix}`.trim(),
-      storageKey: newFilename, // Storing filename as legacy storage_key
+      // storage_key column removed - R2 storage uses r2_key instead
       mimeType: asset.mime_type,
       sizeBytes: asset.size_bytes,
       width: asset.width,

@@ -21,9 +21,29 @@ interface DockerProgressResponse {
  */
 export class DockerRenderAdapter implements RenderAdapter {
   private baseUrl: string;
+  private apiToken: string | undefined;
 
   constructor(baseUrl: string = process.env.RENDER_SERVER_URL || "http://localhost:8080") {
     this.baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash
+    this.apiToken = process.env.RENDER_API_TOKEN;
+    if (!this.apiToken) {
+      console.warn(
+        "[DockerRenderAdapter] Warning: RENDER_API_TOKEN not set - render requests will fail if server requires authentication",
+      );
+    }
+  }
+
+  /**
+   * Get headers with Authorization token if configured
+   */
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (this.apiToken) {
+      headers["Authorization"] = `Bearer ${this.apiToken}`;
+    }
+    return headers;
   }
 
   /**
@@ -34,12 +54,12 @@ export class DockerRenderAdapter implements RenderAdapter {
       throw new Error(`Invalid durationInFrames: ${input.durationInFrames}. Must be a positive number.`);
     }
 
-    if (input.compositionWidth <= 0) {
-      throw new Error(`Invalid compositionWidth: ${input.compositionWidth}. Must be a positive number.`);
+    if (input.compositionWidth < 320 || input.compositionWidth > 3840) {
+      throw new Error(`Invalid compositionWidth: ${input.compositionWidth}. Must be between 320 and 3840.`);
     }
 
-    if (input.compositionHeight <= 0) {
-      throw new Error(`Invalid compositionHeight: ${input.compositionHeight}. Must be a positive number.`);
+    if (input.compositionHeight < 240 || input.compositionHeight > 2160) {
+      throw new Error(`Invalid compositionHeight: ${input.compositionHeight}. Must be between 240 and 2160.`);
     }
 
     if (!Array.isArray(input.timelineData)) {
@@ -67,19 +87,20 @@ export class DockerRenderAdapter implements RenderAdapter {
     this.validateRenderInput(input);
 
     try {
+      // Map interface fields to schema fields
+      const requestBody = {
+        timelineData: input.timelineData,
+        scenes: input.scenes ?? [],
+        width: input.compositionWidth,
+        height: input.compositionHeight,
+        durationInSeconds: Math.ceil(input.durationInFrames / 30), // Convert frames to seconds (assuming 30fps)
+        outputFormat: "mp4" as const,
+      };
+
       const response = await fetch(`${this.baseUrl}/render`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          timelineData: input.timelineData,
-          compositionWidth: input.compositionWidth,
-          compositionHeight: input.compositionHeight,
-          durationInFrames: input.durationInFrames,
-          scenes: input.scenes,
-          variableValues: input.variableValues,
-        }),
+        headers: this.getHeaders(),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -114,7 +135,9 @@ export class DockerRenderAdapter implements RenderAdapter {
     this.validateProgressParams(renderId, bucketName);
 
     try {
-      const response = await fetch(`${this.baseUrl}/render/${encodeURIComponent(renderId)}`);
+      const response = await fetch(`${this.baseUrl}/render/${encodeURIComponent(renderId)}`, {
+        headers: this.getHeaders(),
+      });
 
       if (!response.ok) {
         if (response.status === 404) {

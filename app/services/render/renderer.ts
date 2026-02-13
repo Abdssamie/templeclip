@@ -1,4 +1,5 @@
 import { renderMedia, selectComposition } from "@remotion/renderer";
+import { bundle } from "@remotion/bundler";
 import path from "path";
 import { fileURLToPath } from "url";
 import { uploadToR2, getPresignedDownloadUrl } from "~/lib/r2-client";
@@ -12,28 +13,47 @@ export async function executeRender(
   data: RenderJobData,
   onProgress: (progress: number) => void | Promise<void>,
 ): Promise<string> {
-  const { timelineData, compositionWidth, compositionHeight, durationInFrames, scenes, variableValues } = data;
-  const bundleLocation = path.join(__dirname, "../../videorender");
+  const { timelineData, width, height, durationInSeconds, scenes, variableValues } = data;
 
+  const bundled = await bundle({
+    entryPoint: path.resolve(__dirname, "../../videorender/index.ts"),
+    // If you have a webpack override in remotion.config.ts, pass it here as well.
+    // webpackOverride: (config) => config,
+    webpackOverride: (config) => {
+      return {
+        ...config,
+        resolve: {
+          ...config.resolve,
+          alias: {
+            ...config.resolve?.alias,
+            // Map '~' to your 'app' directory
+            "~": path.resolve(__dirname, "../../../app"),
+          },
+        },
+      };
+    },
+  });
+
+  // Map schema field names to composition expected names
   const inputProps = {
     timelineData,
-    compositionWidth,
-    compositionHeight,
-    durationInFrames,
+    compositionWidth: width,
+    compositionHeight: height,
+    durationInFrames: Math.ceil(durationInSeconds * 30),
     scenes,
     variableValues,
   };
 
   const composition = await selectComposition({
-    serveUrl: bundleLocation,
+    serveUrl: bundled,
     id: "TimelineComposition",
     inputProps,
   });
 
   const { buffer } = await renderMedia({
     composition,
-    serveUrl: bundleLocation,
-    outputLocation: null, // Don't write to disk, get buffer directly
+    serveUrl: bundled,
+    outputLocation: null,
     codec: "h264",
     inputProps,
     timeoutInMilliseconds: CONFIG.RENDER_TIMEOUT_MS,

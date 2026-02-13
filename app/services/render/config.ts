@@ -16,7 +16,7 @@ export const CONFIG = {
     FAILED_AGE: 7 * 24 * 60 * 60,
   },
   WORKER: {
-    CONCURRENCY: 2,
+    CONCURRENCY: 3,
     RATE_LIMIT_MAX: 10,
     RATE_LIMIT_DURATION_MS: 60000,
   },

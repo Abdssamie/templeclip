@@ -48,8 +48,6 @@ export async function getProjectById(id: string): Promise<ProjectRecord | null> 
   try {
     const { rows } = await client.query<ProjectRecord>(`select * from projects where id = $1`, [id]);
 
-    console.log("getProjectById", { id, rows: rows });
-
     return rows[0] ?? null;
   } finally {
     client.release();

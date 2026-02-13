@@ -25,7 +25,6 @@ export async function insertAsset(params: {
   userId: string;
   projectId?: string | null;
   originalName: string;
-  storageKey: string;
   mimeType: string;
   sizeBytes: number;
   width?: number | null;

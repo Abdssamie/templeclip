@@ -1,13 +1,11 @@
-import type { TimelineDataItem, Scene } from "~/components/timeline/types";
-
 export type JobStatus = "queued" | "active" | "completed" | "failed";
 
 export interface RenderJobData {
-  timelineData: TimelineDataItem[];
-  compositionWidth: number;
-  compositionHeight: number;
-  durationInFrames: number;
-  scenes?: Scene[];
+  timelineData: unknown[];
+  width: number;
+  height: number;
+  durationInSeconds: number;
+  scenes?: unknown[];
   variableValues?: Record<string, string>;
 }
 

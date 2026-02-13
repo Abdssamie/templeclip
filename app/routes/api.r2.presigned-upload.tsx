@@ -44,20 +44,20 @@ export async function action({ request }: { request: Request }) {
     } catch {
       console.error("Invalid database URL");
     }
-    
+
     const pool = new Pool({ connectionString });
 
     try {
       await pool.query(
         `insert into assets (
+          id, user_id, original_name, mime_type, size_bytes,
           width, height, duration_seconds, project_id,
           r2_bucket, r2_key, upload_status, created_at
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())`,
         [
           assetId,
           userId,
           filename,
-          null,
           mimeType,
           sizeBytes,
           width ?? null,
