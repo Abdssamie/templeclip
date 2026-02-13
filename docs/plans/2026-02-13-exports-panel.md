@@ -889,6 +889,55 @@ Update the Outlet context to include refreshKey:
 exportsRefreshKey,
 ```
 
+**Step 4: Update exports route to use key prop**
+
+In `app/routes/exports.tsx`:
+
+```typescript
+import { ExportsPanel } from "~/components/exports/ExportsPanel";
+import { useParams, useOutletContext } from "react-router";
+
+export default function ExportsRoute() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const { exportsRefreshKey } = useOutletContext<{ exportsRefreshKey: number }>();
+
+  if (!projectId) {
+    return <div>Project ID required</div>;
+  }
+
+  // Key prop triggers full remount when changed, automatically re-fetching data
+  return <ExportsPanel key={exportsRefreshKey} projectId={projectId} />;
+}
+```
+
+**Step 5: Remove refreshKey from ExportsPanel props**
+
+Update `app/components/exports/ExportsPanel.tsx`:
+
+```typescript
+interface ExportsPanelProps {
+  projectId: string;
+  // Remove: refreshKey?: number;  -- no longer needed!
+}
+
+export function ExportsPanel({ projectId }: ExportsPanelProps) {
+  // ... rest of component stays the same
+
+  useEffect(() => {
+    fetchExports();
+  }, [fetchExports]); // Remove refreshKey from dependencies
+
+  // ...
+}
+```
+
+Update the Outlet context to include refreshKey:
+
+```typescript
+// Find the Outlet context object and add:
+exportsRefreshKey,
+```
+
 **Step 4: Update exports route to receive refreshKey**
 
 In `app/routes/exports.tsx`:
@@ -969,7 +1018,7 @@ This implementation:
 5. Adds Exports tab to left panel activity bar
 6. Updates render flow with morphing toast: "Rendering: X%" → "Render complete! Click to download"
 7. Implements blob download to avoid redirect (opens save dialog)
-8. Auto-refreshes exports panel when render completes or toast dismissed
+8. Auto-refreshes exports panel via key prop remount when render completes or toast dismissed
 
 **Toast Behavior:**
 
