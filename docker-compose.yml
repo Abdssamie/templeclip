@@ -43,3 +43,26 @@ services:
     mem_limit: 2g
     memswap_limit: 2g
     shm_size: 1g
+
+  render:
+    build:
+      context: .
+      dockerfile: Dockerfile.render
+    container_name: kimu-render
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      RENDER_SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - render-output:/tmp/renders
+    # Resource limits for video rendering
+    mem_limit: 4g
+    memswap_limit: 4g
+    shm_size: 2g
+    restart: unless-stopped
+
+volumes:
+  render-output:
