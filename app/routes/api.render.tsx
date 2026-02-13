@@ -20,7 +20,7 @@ import { resolveR2UrlsInTimeline } from "~/utils/resolve-r2-urls.server";
  *   applyElasticity?: boolean
  * }
  *
- * OR (legacy timeline-based):
+ * OR (timeline-based):
  * {
  *   timelineData: TimelineDataItem[],
  *   compositionWidth: number,
@@ -46,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return Response.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    // Check if this is a scene-based request or legacy timeline-based request
+    // Check if this is a scene-based request or timeline-based request
     if (body.projectId && body.scenes) {
       // Scene-based render request
       if (typeof body.projectId !== "string") {
@@ -113,7 +113,7 @@ export async function action({ request }: ActionFunctionArgs) {
         bucketName: result.bucketName,
       });
     } else {
-      // Legacy timeline-based render request
+      // timeline-based render request
       if (!Array.isArray(body.timelineData)) {
         return Response.json({ error: "Missing or invalid required field: timelineData" }, { status: 400 });
       }
@@ -131,11 +131,11 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       // Resolve R2 URLs for render service access
-      console.log("Resolving R2 URLs for rendering (legacy timeline)...");
+      console.log("Resolving R2 URLs for rendering (timeline)...");
       const resolvedTimelineData = await resolveR2UrlsInTimeline(
         userId,
         body.timelineData,
-        [], // No scenes for legacy requests
+        [], // No scenes for requests
         86400, // 24 hours
       );
 

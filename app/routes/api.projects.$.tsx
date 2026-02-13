@@ -1,4 +1,5 @@
 import fs from "fs";
+import { Pool } from "pg";
 import path from "path";
 import type { MediaBinItem, Scene, TimelineState } from "~/components/timeline/types";
 import { listAssetsByUser, softDeleteAsset } from "~/lib/assets.repo.server";
@@ -186,12 +187,7 @@ export async function action({ request }: { request: Request }) {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
-    // simple update
-    // inline update using pg (reuse pool via repo)
-    // quick import avoided; execute with small query here
 
-    // @ts-ignore
-    const { Pool } = await import("pg");
     const rawDbUrl = process.env.DATABASE_URL || "";
     let connectionString = rawDbUrl;
     try {

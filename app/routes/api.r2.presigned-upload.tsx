@@ -44,6 +44,7 @@ export async function action({ request }: { request: Request }) {
     } catch {
       console.error("Invalid database URL");
     }
+    
     const pool = new Pool({ connectionString });
 
     try {

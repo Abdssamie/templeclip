@@ -53,5 +53,5 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  return jsonError("Method not allowd", 405);
+  return jsonError("Method not allowed", 405);
 }
