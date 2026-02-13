@@ -287,10 +287,7 @@ export default function TimelineEditor() {
     updateRulerFromPlayer,
   } = useRuler(playerRef, timelineWidth, getPixelsPerSecond());
 
-  const [exportsRefreshKey, setExportsRefreshKey] = useState(0);
-  const { isRendering, handleRenderVideo, handleRenderTimeline } = useRenderer({
-    onRenderComplete: () => setExportsRefreshKey((k) => k + 1),
-  });
+  const { isRendering, handleRenderVideo, handleRenderTimeline } = useRenderer();
 
   // Wrapper function for transition drop handler to match expected interface
   const handleDropTransitionOnTrackWrapper = (transition: Transition, trackId: string, dropLeftPx: number) => {
@@ -508,9 +505,7 @@ export default function TimelineEditor() {
       }
 
       const sceneCount = updatedScenes.length;
-      toast.success(
-        `Project saved successfully! (Main timeline + ${sceneCount} scene${sceneCount !== 1 ? "s" : ""})`,
-      );
+      toast.success(`Project saved successfully! (Main timeline + ${sceneCount} scene${sceneCount !== 1 ? "s" : ""})`);
     } catch (e) {
       console.error(e);
       toast.error("Failed to save project");
@@ -983,10 +978,11 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
-                ? "bg-background text-primary"
-                : "text-muted-foreground"
-                }`}
+              className={`h-9 w-9 p-0 ${
+                location.pathname.includes("/media-bin") || /^\/project\/[^/]+\/?$/.test(location.pathname)
+                  ? "bg-background text-primary"
+                  : "text-muted-foreground"
+              }`}
               onClick={() => openSection("media-bin")}
               title="Media Bin">
               <File className="h-5 w-5" />
@@ -994,8 +990,9 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
-                }`}
+              className={`h-9 w-9 p-0 ${
+                location.pathname.includes("/text-editor") ? "bg-background text-primary" : "text-muted-foreground"
+              }`}
               onClick={() => openSection("text-editor")}
               title="Text Editor">
               <Type className="h-5 w-5" />
@@ -1003,8 +1000,9 @@ export default function TimelineEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className={`h-9 w-9 p-0 ${location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
-                }`}
+              className={`h-9 w-9 p-0 ${
+                location.pathname.includes("/transitions") ? "bg-background text-primary" : "text-muted-foreground"
+              }`}
               onClick={() => openSection("transitions")}
               title="Transitions">
               <BetweenVerticalEnd className="h-5 w-5" />
@@ -1071,8 +1069,6 @@ export default function TimelineEditor() {
                 onSelectScene={handleSelectScene}
                 onDeleteScene={handleDeleteSceneWrapper}
                 onRenameScene={handleRenameScene}
-                // Exports refresh
-                exportsRefreshKey={exportsRefreshKey}
               />
             </div>
           </ResizablePanel>

@@ -44,8 +44,6 @@ interface LeftPanelProps {
   onSelectScene?: (sceneId: string | null) => void;
   onDeleteScene?: (sceneId: string) => Promise<boolean>;
   onRenameScene?: (sceneId: string, newName: string) => Promise<boolean>;
-  // Exports refresh
-  exportsRefreshKey?: number;
 }
 
 export default function LeftPanel({
@@ -75,8 +73,6 @@ export default function LeftPanel({
   onSelectScene,
   onDeleteScene,
   onRenameScene,
-  // Exports refresh
-  exportsRefreshKey,
 }: LeftPanelProps) {
   const location = useLocation();
 
@@ -174,8 +170,6 @@ export default function LeftPanel({
                 onSelectScene,
                 onDeleteScene,
                 onRenameScene,
-                // Exports refresh
-                exportsRefreshKey,
               }}
             />
           </div>

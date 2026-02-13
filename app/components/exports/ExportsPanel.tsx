@@ -47,6 +47,13 @@ export function ExportsPanel({ projectId }: ExportsPanelProps) {
     fetchExports();
   }, [fetchExports]);
 
+  // Listen for exports-updated event
+  useEffect(() => {
+    const handleRefresh = () => fetchExports();
+    window.addEventListener("exports-updated", handleRefresh);
+    return () => window.removeEventListener("exports-updated", handleRefresh);
+  }, [fetchExports]);
+
   const handleDownload = async (url: string, filename: string) => {
     setIsDownloading(filename);
     try {
@@ -142,15 +149,13 @@ export function ExportsPanel({ projectId }: ExportsPanelProps) {
                         handleDownload(exp.videoUrl, filename);
                       }
                     }}
-                    disabled={isDownloading !== null}
-                  >
+                    disabled={isDownloading !== null}>
                     <Download className="h-4 w-4 mr-2" />
                     Download
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDelete(exp.id)}
-                    className="text-destructive focus:text-destructive"
-                  >
+                    className="text-destructive focus:text-destructive">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </DropdownMenuItem>

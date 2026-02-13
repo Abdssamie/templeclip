@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import type { TimelineDataItem } from "~/components/timeline/types";
 
-export const useRenderer = (options?: { onRenderComplete?: () => void }) => {
+export const useRenderer = () => {
   const [isRendering, setIsRendering] = useState(false);
   const toastIdRef = useRef<string | number | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -17,43 +17,40 @@ export const useRenderer = (options?: { onRenderComplete?: () => void }) => {
     };
   }, []);
 
-  const showDownloadToast = useCallback(
-    (outputFile: string) => {
-      // Update existing toast to download state
-      toastIdRef.current = toast.success("Render complete! Click to download", {
-        id: toastIdRef.current || undefined,
-        duration: Infinity,
-        action: {
-          label: "Download",
-          onClick: () => {
-            // Fetch as blob to trigger save dialog
-            fetch(outputFile)
-              .then((res) => res.blob())
-              .then((blob) => {
-                const blobUrl = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = blobUrl;
-                link.download = "rendered-video.mp4";
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                URL.revokeObjectURL(blobUrl);
-                toast.dismiss(toastIdRef.current!);
-                options?.onRenderComplete?.();
-              })
-              .catch((err) => {
-                console.error("Download failed:", err);
-                toast.error("Failed to download video");
-              });
-          },
+  const showDownloadToast = useCallback((outputFile: string) => {
+    // Update existing toast to download state
+    toastIdRef.current = toast.success("Render complete! Click to download", {
+      id: toastIdRef.current || undefined,
+      duration: Infinity,
+      action: {
+        label: "Download",
+        onClick: () => {
+          // Fetch as blob to trigger save dialog
+          fetch(outputFile)
+            .then((res) => res.blob())
+            .then((blob) => {
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = blobUrl;
+              link.download = "rendered-video.mp4";
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              URL.revokeObjectURL(blobUrl);
+              toast.dismiss(toastIdRef.current!);
+              window.dispatchEvent(new Event("exports-updated"));
+            })
+            .catch((err) => {
+              console.error("Download failed:", err);
+              toast.error("Failed to download video");
+            });
         },
-        onDismiss: () => {
-          options?.onRenderComplete?.();
-        },
-      });
-    },
-    [options],
-  );
+      },
+      onDismiss: () => {
+        window.dispatchEvent(new Event("exports-updated"));
+      },
+    });
+  }, []);
 
   const startRender = useCallback(
     async (renderPayload: object, label: string) => {
@@ -94,7 +91,7 @@ export const useRenderer = (options?: { onRenderComplete?: () => void }) => {
                 toast.error(`Error: ${errors?.join(", ") || "Render failed"}`, {
                   id: toastIdRef.current!,
                 });
-                options?.onRenderComplete?.();
+                window.dispatchEvent(new Event("exports-updated"));
               }
               setIsRendering(false);
             }
@@ -105,7 +102,7 @@ export const useRenderer = (options?: { onRenderComplete?: () => void }) => {
               id: toastIdRef.current!,
             });
             setIsRendering(false);
-            options?.onRenderComplete?.();
+            window.dispatchEvent(new Event("exports-updated"));
           }
         }, 2000);
       } catch (error) {
@@ -115,10 +112,10 @@ export const useRenderer = (options?: { onRenderComplete?: () => void }) => {
           : "Unknown rendering error";
         toast.error(`Error: ${message}`, { id: toastIdRef.current! });
         setIsRendering(false);
-        options?.onRenderComplete?.();
+        window.dispatchEvent(new Event("exports-updated"));
       }
     },
-    [options, showDownloadToast],
+    [showDownloadToast],
   );
 
   const handleRenderVideo = useCallback(
