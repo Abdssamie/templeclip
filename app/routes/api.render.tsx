@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { requireUserId } from "~/lib/auth.utils";
-import { startLambdaRender, pollRenderProgress, type RenderInput } from "~/services/lambda-render.server";
+import { createRenderAdapter } from "~/services/render-adapter.factory";
+import type { RenderInput } from "~/services/render-adapter.interface";
 import { getProjectScenes } from "~/lib/projects.repo";
 import { applyElasticityToTimeline } from "~/utils/elasticity";
 import { buildTimelineFromScenes, type SceneRenderRequest } from "~/utils/timeline-builder.server";
@@ -82,7 +83,7 @@ export async function action({ request }: ActionFunctionArgs) {
         userId,
         timelineData,
         projectScenes,
-        86400 // 24 hours
+        86400, // 24 hours
       );
 
       // Calculate final duration in frames (FPS = 30)
@@ -94,8 +95,11 @@ export async function action({ request }: ActionFunctionArgs) {
         Object.assign(mergedVariables, sceneRequest.variables);
       }
 
-      // Start Lambda render
-      const result = await startLambdaRender({
+      // Create render adapter based on environment
+      const adapter = createRenderAdapter();
+
+      // Start render
+      const result = await adapter.startRender({
         timelineData: resolvedTimelineData,
         compositionWidth,
         compositionHeight,
@@ -108,7 +112,6 @@ export async function action({ request }: ActionFunctionArgs) {
         renderId: result.renderId,
         bucketName: result.bucketName,
       });
-
     } else {
       // Legacy timeline-based render request
       if (!Array.isArray(body.timelineData)) {
@@ -133,7 +136,7 @@ export async function action({ request }: ActionFunctionArgs) {
         userId,
         body.timelineData,
         [], // No scenes for legacy requests
-        86400 // 24 hours
+        86400, // 24 hours
       );
 
       // Extract render input from request body
@@ -144,8 +147,11 @@ export async function action({ request }: ActionFunctionArgs) {
         durationInFrames: body.durationInFrames,
       };
 
-      // Start Lambda render (validation happens in the service)
-      const result = await startLambdaRender(renderInput);
+      // Create render adapter
+      const adapter = createRenderAdapter();
+
+      // Start render (validation happens in the adapter)
+      const result = await adapter.startRender(renderInput);
 
       return Response.json({
         renderId: result.renderId,
@@ -202,8 +208,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return Response.json({ error: "Missing or empty required query parameter: bucketName" }, { status: 400 });
     }
 
-    // Poll render progress (validation happens in the service)
-    const progress = await pollRenderProgress(renderId, bucketName);
+    // Create render adapter
+    const adapter = createRenderAdapter();
+
+    // Poll render progress (validation happens in the adapter)
+    const progress = await adapter.pollRenderProgress(renderId, bucketName);
 
     return Response.json(progress);
   } catch (error) {
