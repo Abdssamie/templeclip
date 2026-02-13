@@ -287,7 +287,10 @@ export default function TimelineEditor() {
     updateRulerFromPlayer,
   } = useRuler(playerRef, timelineWidth, getPixelsPerSecond());
 
-  const { isRendering, renderStatus, progress, handleRenderVideo, handleRenderTimeline } = useRenderer();
+  const [exportsRefreshKey, setExportsRefreshKey] = useState(0);
+  const { isRendering, handleRenderVideo, handleRenderTimeline } = useRenderer({
+    onRenderComplete: () => setExportsRefreshKey((k) => k + 1),
+  });
 
   // Wrapper function for transition drop handler to match expected interface
   const handleDropTransitionOnTrackWrapper = (transition: Transition, trackId: string, dropLeftPx: number) => {
@@ -1068,6 +1071,8 @@ export default function TimelineEditor() {
                 onSelectScene={handleSelectScene}
                 onDeleteScene={handleDeleteSceneWrapper}
                 onRenameScene={handleRenameScene}
+                // Exports refresh
+                exportsRefreshKey={exportsRefreshKey}
               />
             </div>
           </ResizablePanel>
@@ -1359,21 +1364,6 @@ export default function TimelineEditor() {
         className="hidden"
         onChange={handleFileInputChange}
       />
-
-      {/* Render Status as Toast */}
-      {renderStatus && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <RenderStatus renderStatus={renderStatus} />
-          {isRendering && progress > 0 && (
-            <div className="mt-2 w-64 bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Blocker overlay for unauthenticated users */}
       {!isAuthLoading && !user && (

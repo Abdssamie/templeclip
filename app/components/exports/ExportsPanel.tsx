@@ -24,10 +24,9 @@ interface Export {
 
 interface ExportsPanelProps {
   projectId: string;
-  refreshKey?: number;
 }
 
-export function ExportsPanel({ projectId, refreshKey }: ExportsPanelProps) {
+export function ExportsPanel({ projectId }: ExportsPanelProps) {
   const [exports, setExports] = useState<Export[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
@@ -46,7 +45,7 @@ export function ExportsPanel({ projectId, refreshKey }: ExportsPanelProps) {
 
   useEffect(() => {
     fetchExports();
-  }, [fetchExports, refreshKey]);
+  }, [fetchExports]);
 
   const handleDownload = async (url: string, filename: string) => {
     setIsDownloading(filename);
