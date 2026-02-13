@@ -1,6 +1,5 @@
-import type { Scene, TimelineDataItem } from "~/components/timeline/types";
+import { PIXELS_PER_SECOND, type Scene, type TimelineDataItem } from "~/components/timeline/types";
 import { transformTimelineToData } from "~/utils/timeline-utils";
-import { PIXELS_PER_SECOND } from "~/components/timeline/types";
 
 export interface SceneRenderRequest {
   sceneId: string;

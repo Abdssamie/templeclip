@@ -3,7 +3,7 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import { uploadToR2, getPublicR2Url } from "../lib/r2-client";
+import { uploadToR2, getPresignedDownloadUrl, getPresignedUploadUrl  } from "../lib/r2-client";
 import type { TimelineDataItem, Scene } from "../components/timeline/types";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -126,7 +126,7 @@ async function renderJob(job: RenderJob): Promise<void> {
     await fs.promises.unlink(outputPath);
 
     job.status = "completed";
-    job.outputUrl = getPublicR2Url(r2Key);
+    job.outputUrl = await getPresignedDownloadUrl(r2Key);
   } catch (error) {
     job.status = "failed";
     job.error = error instanceof Error ? error.message : String(error);

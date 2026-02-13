@@ -1,14 +1,15 @@
 // app/services/render-adapter.interface.ts
+import type { TimelineDataItem, Scene } from "~/components/timeline/types";
 
 /**
  * Input props for rendering a timeline composition
  */
 export interface RenderInput {
-  timelineData: unknown[];
+  timelineData: TimelineDataItem[];
   compositionWidth: number;
   compositionHeight: number;
   durationInFrames: number;
-  scenes?: unknown[];
+  scenes?: Scene[];
   variableValues?: Record<string, string>;
 }
 
