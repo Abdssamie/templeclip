@@ -1,17 +1,23 @@
-import "dotenv/config";
 import { Pool } from "pg";
 import fs from "fs";
 import path from "path";
 
 async function run() {
-  const rawDbUrl = process.env.DATABASE_URL || "";
+  const rawDbUrl = process.env.DATABASE_URL;
+
+  if (!rawDbUrl) {
+    console.error("❌ DATABASE_URL environment variable is not set");
+    process.exitCode = 1;
+    return;
+  }
+
   let connectionString = rawDbUrl;
   try {
     const u = new URL(rawDbUrl);
     u.search = "";
     connectionString = u.toString();
-  } catch {
-    console.error("Invalid database URL");
+  } catch (error) {
+    console.error("❌ Invalid database URL:", error);
     process.exitCode = 1;
     return;
   }
