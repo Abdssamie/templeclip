@@ -1,17 +1,4 @@
 services:
-  nginx:
-    image: nginx:alpine
-    container_name: videoeditor-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - /etc/letsencrypt:/etc/letsencrypt:ro # Mount certs read-only
-    depends_on:
-      - frontend
-      - backend
-
   frontend:
     build:
       context: .
@@ -56,9 +43,3 @@ services:
     mem_limit: 2g
     memswap_limit: 2g
     shm_size: 1g
-
-  fastapi:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: videoeditor-fastapi

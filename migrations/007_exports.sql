@@ -26,8 +26,10 @@ create table if not exists exports (
 );
 
 -- Create render status enum (using check constraint for flexibility)
-alter table exports add constraint exports_render_status_check 
-  check (render_status in ('queued', 'rendering', 'completed', 'failed', 'cancelled'));
+-- Create render status enum (using check constraint for flexibility)
+ALTER TABLE exports DROP CONSTRAINT IF EXISTS exports_render_status_check;
+ALTER TABLE exports ADD CONSTRAINT exports_render_status_check 
+  CHECK (render_status IN ('queued', 'rendering', 'completed', 'failed', 'cancelled'));
 
 -- Indexes for efficient queries
 create index if not exists idx_exports_user_project on exports(user_id, project_id, created_at desc);

@@ -6,10 +6,11 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor, HardDrive, FolderOpen, Calendar, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Progress } from "~/components/ui/progress";
+import { ApiKeysSection } from "~/components/api-section";
 
 export default function Profile() {
   const { user } = useAuth();
-  const { theme, setTheme, systemTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [usedBytes, setUsedBytes] = React.useState<number | null>(null);
   const [limitBytes, setLimitBytes] = React.useState<number>(2 * 1024 * 1024 * 1024);
   const [projectCount, setProjectCount] = React.useState<number | null>(null);
@@ -155,6 +156,10 @@ export default function Profile() {
 
         <div className="mt-6">
           <Button variant="outline">Manage Subscription</Button>
+        </div>
+
+        <div className="mt-10">
+          <ApiKeysSection />
         </div>
       </div>
     </div>
