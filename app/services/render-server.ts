@@ -7,10 +7,17 @@ import { Queue, Worker, Job } from "bullmq";
 import { Redis } from "ioredis";
 import { uploadToR2, getPresignedDownloadUrl } from "../lib/r2-client";
 import type { TimelineDataItem, Scene } from "../components/timeline/types";
+import { RenderRequestSchema } from "../schemas/apis/render";
+import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import cors from "cors";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.json());
+
+// Limit JSON body to 10MB
+app.use(express.json({ limit: "10mb" }));
+app.use(cors());
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const connection = { host: "localhost", port: 6379 };
@@ -19,6 +26,48 @@ if (process.env.REDIS_URL) {
   connection.host = url.hostname;
   connection.port = parseInt(url.port) || 6379;
 }
+
+// Bearer Token Authentication
+const RENDER_API_TOKEN = process.env.RENDER_API_TOKEN;
+
+if (!RENDER_API_TOKEN) {
+  console.warn("[Warning] RENDER_API_TOKEN not set - render service is insecure!");
+}
+
+function authenticateToken(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (!RENDER_API_TOKEN) {
+    return next(); // Skip auth if no token configured (development)
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized - Bearer token required" });
+  }
+
+  const token = authHeader.substring(7);
+  if (token !== RENDER_API_TOKEN) {
+    return res.status(401).json({ error: "Unauthorized - Invalid token" });
+  }
+
+  next();
+}
+
+// Rate Limiting with Redis
+const redisClient = new Redis(redisUrl);
+
+const limiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 requests per hour per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: new RedisStore({
+    sendCommand: async (...args: string[]) => {
+      const result = await redisClient.call(args[0], ...args.slice(1));
+      return result as string | number | boolean | (string | number | boolean)[];
+    },
+  }),
+  message: { error: "Rate limit exceeded", retryAfter: 3600 },
+});
 
 interface RenderJobData {
   timelineData: TimelineDataItem[];
@@ -165,8 +214,17 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-app.post("/render", async (req, res) => {
+app.post("/render", limiter, authenticateToken, async (req, res) => {
   try {
+    // Validate request body
+    const result = RenderRequestSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        error: "Invalid request data",
+        details: result.error.issues,
+      });
+    }
+
     const input = req.body as RenderJobData;
 
     if (!input.timelineData || !input.compositionWidth || !input.compositionHeight || !input.durationInFrames) {
@@ -185,8 +243,11 @@ app.post("/render", async (req, res) => {
       res.status(500).json({ error: "Failed to create job" });
     }
   } catch (error) {
-    console.error("[Queue Error]", error);
-    res.status(500).json({ error: "Failed to queue render job" });
+    // Don't leak internal error details
+    console.error("[Render Error]", error);
+    return res.status(500).json({
+      error: "Internal server error",
+    });
   }
 });
 
