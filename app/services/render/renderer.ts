@@ -33,6 +33,7 @@ export async function executeRender(
   const { buffer } = await renderMedia({
     composition,
     serveUrl: bundleLocation,
+    outputLocation: null, // Don't write to disk, get buffer directly
     codec: "h264",
     inputProps,
     timeoutInMilliseconds: CONFIG.RENDER_TIMEOUT_MS,

@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { betterAuth } from "better-auth";
 import { Pool } from "pg";
 
@@ -6,14 +5,19 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
 
 // Strip query params like sslmode so Pool options below take full effect
-const rawDbUrl = process.env.DATABASE_URL || "";
+const rawDbUrl = process.env.DATABASE_URL;
+if (!rawDbUrl) {
+  throw new Error("DATABASE_URL environment variable is not set");
+}
+
 let connectionString = rawDbUrl;
 try {
   const u = new URL(rawDbUrl);
   u.search = "";
   connectionString = u.toString();
-} catch {
-  // keep as-is
+} catch (error) {
+  console.error("Failed to parse DATABASE_URL:", error);
+  throw new Error("Invalid DATABASE_URL format");
 }
 
 // Rely on Better Auth's official CLI migration for schema.
