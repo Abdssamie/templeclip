@@ -24,6 +24,15 @@ try {
 
 console.log("🔧 Initializing Better Auth with:");
 console.log("🔧 DATABASE_URL:", process.env.DATABASE_URL ? "SET" : "NOT SET");
+if (process.env.DATABASE_URL) {
+  // Show first 20 chars and last 10 chars for debugging
+  const dbUrl = process.env.DATABASE_URL;
+  const masked = dbUrl.length > 30 ? `${dbUrl.substring(0, 20)}...${dbUrl.substring(dbUrl.length - 10)}` : dbUrl;
+  console.log("🔧 DATABASE_URL value:", masked);
+  console.log("🔧 DATABASE_URL length:", dbUrl.length);
+  console.log("🔧 DATABASE_URL type:", typeof dbUrl);
+  console.log("🔧 Parsed connectionString:", connectionString);
+}
 console.log("🔧 GOOGLE_CLIENT_ID:", GOOGLE_CLIENT_ID ? "SET" : "NOT SET");
 console.log("🔧 GOOGLE_CLIENT_SECRET:", GOOGLE_CLIENT_SECRET ? "SET" : "NOT SET");
 console.log("🔧 Note: baseURL will be auto-detected from request headers");
