@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use `LambdaRenderAdapter` from `lambda-render-adapter.ts` instead.
+ * This file is kept for backward compatibility but will be removed in a future version.
+ */
+
 import { renderMediaOnLambda, getRenderProgress as getRemotionRenderProgress } from "@remotion/lambda/client";
 import { getLambdaConfig } from "~/lib/lambda-config.server";
 import type { TimelineDataItem, Scene } from "~/components/timeline/types";
