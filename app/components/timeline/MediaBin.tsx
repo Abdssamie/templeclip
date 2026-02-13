@@ -22,7 +22,7 @@ import {
   Braces,
 } from "lucide-react";
 import { Thumbnail } from "@remotion/player";
-import { OffthreadVideo, Img, Video } from "remotion";
+import { Html5Video } from "remotion";
 import { type MediaBinItem } from "./types";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
@@ -67,7 +67,7 @@ interface MediaBinProps {
 // Memoized component for video thumbnails to prevent flickering
 const VideoThumbnail = memo(({ mediaUrl, width, height }: { mediaUrl: string; width: number; height: number }) => {
   const VideoComponent = useMemo(() => {
-    return () => <Video src={mediaUrl} />;
+    return () => <Html5Video src={mediaUrl} />;
   }, [mediaUrl]);
 
   return (
@@ -257,10 +257,10 @@ export default function MediaBin() {
   // Sync from parent if it changes
   useEffect(() => {
     if (arrangeModeExternal && arrangeModeExternal !== arrangeMode) setArrangeMode(arrangeModeExternal);
-  }, [arrangeModeExternal]);
+  }, [arrangeModeExternal, arrangeMode]);
   useEffect(() => {
     if (sortByExternal && sortByExternal !== sortBy) setSortBy(sortByExternal);
-  }, [sortByExternal]);
+  }, [sortByExternal, sortBy]);
 
   const updateArrangeMode = useCallback(
     (mode: "default" | "group") => {

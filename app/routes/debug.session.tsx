@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export default function DebugSession() {
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [allCookies, setAllCookies] = useState<string>("");
-  const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<unknown>(null);
 
   useEffect(() => {
     // Get all cookies

@@ -2,8 +2,17 @@ import React from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 
+type Key = {
+  id: string;
+  name: string;
+  prefix: string;
+  created_at: string;
+  last_used_at: string;
+}
+
+
 export function ApiKeysSection() {
-  const [keys, setKeys] = React.useState<any[]>([]);
+  const [keys, setKeys] = React.useState<Key[]>([]);
   const [newKey, setNewKey] = React.useState<string | null>(null);
   const [isCreating, setIsCreating] = React.useState(false);
   const [name, setName] = React.useState("");
@@ -120,7 +129,11 @@ export function ApiKeysSection() {
                     {key.last_used_at && ` • Last used: ${new Date(key.last_used_at).toLocaleDateString()}`}
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600" onClick={() => handleRevoke(key.id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500 hover:text-red-600"
+                  onClick={() => handleRevoke(key.id)}>
                   Revoke
                 </Button>
               </div>
