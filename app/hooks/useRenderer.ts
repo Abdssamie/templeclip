@@ -54,8 +54,8 @@ export const useRenderer = () => {
             const progressRes = await axios.get(`/api/render?renderId=${renderId}&bucketName=${bucketName}`);
             const { done, status, progress: renderProgress, outputFile, errors } = progressRes.data;
 
-            setRenderStatus(`Rendering: ${Math.round((renderProgress || 0) * 100)}%`);
-            setProgress(Math.round((renderProgress || 0) * 100));
+            setRenderStatus(`Rendering: ${Math.round(renderProgress || 0)}%`);
+            setProgress(Math.round(renderProgress || 0));
 
             if (done) {
               clearInterval(pollIntervalRef.current!);
@@ -125,8 +125,8 @@ export const useRenderer = () => {
             const progressRes = await axios.get(`/api/render?renderId=${renderId}&bucketName=${bucketName}`);
             const { done, status, progress: renderProgress, outputFile, errors } = progressRes.data;
 
-            setRenderStatus(`Rendering: ${Math.round((renderProgress || 0) * 100)}%`);
-            setProgress(Math.round((renderProgress || 0) * 100));
+            setRenderStatus(`Rendering: ${Math.round(renderProgress || 0)}%`);
+            setProgress(Math.round(renderProgress || 0));
 
             if (done) {
               clearInterval(pollIntervalRef.current!);
