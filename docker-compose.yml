@@ -10,15 +10,12 @@ services:
     env_file:
       - .env
     environment:
-      # Ensure server-side code can construct proper callback URLs
       AUTH_BASE_URL: https://trykimu.com
       AUTH_TRUSTED_ORIGINS: https://trykimu.com,https://www.trykimu.com
       AUTH_COOKIE_DOMAIN: trykimu.com
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: 5173
-    # ports:
-    #   - "5173:5173"
     depends_on:
       - backend
 
@@ -35,14 +32,24 @@ services:
       AUTH_COOKIE_DOMAIN: trykimu.com
       NODE_ENV: production
       PORT: 8000
-    # ports:
-    #   - "8000:8000"
     volumes:
       - ./out:/app/out
-    # Memory configuration for video rendering
     mem_limit: 2g
     memswap_limit: 2g
     shm_size: 1g
+
+  redis:
+    image: redis:7-alpine
+    container_name: kimu-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
 
   render:
     build:
@@ -53,16 +60,20 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      REDIS_URL: redis://redis:6379
       RENDER_SERVER_PORT: 8080
     ports:
       - "8080:8080"
     volumes:
       - render-output:/tmp/renders
-    # Resource limits for video rendering
+    depends_on:
+      redis:
+        condition: service_healthy
     mem_limit: 4g
     memswap_limit: 4g
     shm_size: 2g
     restart: unless-stopped
 
 volumes:
+  redis-data:
   render-output:
