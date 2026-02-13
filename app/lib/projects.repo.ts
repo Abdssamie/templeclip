@@ -10,7 +10,7 @@ export type ProjectRecord = {
   updated_at: string;
   scenes: Scene[];
   timeline: TimelineState | null;
-  textBinItems: MediaBinItem[];
+  text_bin_items: MediaBinItem[];
   canvas_settings: object | null;
   last_opened_at: string | null;
   thumbnail_asset_id: string | null;
@@ -47,6 +47,9 @@ export async function getProjectById(id: string): Promise<ProjectRecord | null> 
   const client = await getPool().connect();
   try {
     const { rows } = await client.query<ProjectRecord>(`select * from projects where id = $1`, [id]);
+
+    console.log("getProjectById", { id, rows: rows });
+
     return rows[0] ?? null;
   } finally {
     client.release();

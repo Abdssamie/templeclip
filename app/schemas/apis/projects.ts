@@ -24,7 +24,7 @@ export const ProjectStateResponseSchema = z.object({
     created_at: DateString,
     updated_at: DateString,
   }),
-  timeline: z.unknown(),
+  timeline: z.unknown().nullable(),
   textBinItems: z.array(z.unknown()),
   scenes: z.array(z.unknown()).default([]), // Scene data from database
 });

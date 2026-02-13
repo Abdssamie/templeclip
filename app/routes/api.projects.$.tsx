@@ -39,14 +39,15 @@ export async function loader({ request }: { request: Request }) {
     const id = m[1];
     const proj = await getProjectById(id);
     if (!proj || proj.user_id !== userId) return new Response("Not Found", { status: 404 });
-    const state = await getProjectById(id);
-    const scenes: Scene[] = await getProjectScenes(id);
+
     const payload = ProjectStateResponseSchema.parse({
       project: proj,
-      timeline: state?.timeline,
-      textBinItems: state?.textBinItems,
-      scenes: scenes,
+      timeline: proj?.timeline,
+      textBinItems: proj?.text_bin_items,
+      scenes: proj?.scenes,
     });
+
+    console.log("Loaded project", id, "with scenes", proj?.scenes.length);
     return new Response(JSON.stringify(payload), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 
@@ -176,7 +177,7 @@ export async function action({ request }: { request: Request }) {
       const prev = await getProjectById(id);
       await updateProjectState(id, userId, {
         timeline: timeline ?? prev?.timeline ?? { tracks: [] },
-        textBinItems: textBinItems ?? prev?.textBinItems,
+        textBinItems: textBinItems ?? prev?.text_bin_items,
       });
     }
     if (scenes) {
