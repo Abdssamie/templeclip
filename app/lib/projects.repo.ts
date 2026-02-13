@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { getPool } from "~/lib/db.server";
-import type { Scene } from "~/components/timeline/types";
+import type { MediaBinItem, Scene, TimelineState } from "~/components/timeline/types";
 
 export type ProjectRecord = {
   id: string;
@@ -8,6 +8,12 @@ export type ProjectRecord = {
   name: string;
   created_at: string;
   updated_at: string;
+  scenes: Scene[];
+  timeline: TimelineState | null;
+  textBinItems: MediaBinItem[];
+  canvas_settings: object | null;
+  last_opened_at: string | null;
+  thumbnail_asset_id: string | null;
 };
 
 export async function createProject(params: { userId: string; name: string }): Promise<ProjectRecord> {
@@ -73,6 +79,43 @@ export async function getProjectSceneById(projectId: string, sceneId: string): P
     const { rows } = await client.query<{ scenes: Scene[] }>(`select scenes from projects where id = $1`, [projectId]);
     const scenes = rows[0]?.scenes ?? [];
     return scenes.find((s) => s.id === sceneId) ?? null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateProjectState(
+  projectId: string,
+  userId: string,
+  state: { timeline?: TimelineState | null; textBinItems?: MediaBinItem[] },
+): Promise<boolean> {
+  const client = await getPool().connect();
+  try {
+    // Build dynamic query to only update provided fields
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let paramIndex = 1;
+
+    if (state.timeline !== undefined) {
+      updates.push(`timeline = $${paramIndex++}`);
+      values.push(JSON.stringify(state.timeline));
+    }
+
+    if (state.textBinItems !== undefined) {
+      updates.push(`text_bin_items = $${paramIndex++}`);
+      values.push(JSON.stringify(state.textBinItems));
+    }
+
+    if (updates.length === 0) {
+      return false; // Nothing to update
+    }
+
+    updates.push(`updated_at = now()`);
+    values.push(projectId, userId);
+
+    const query = `update projects set ${updates.join(", ")} where id = $${paramIndex++} and user_id = $${paramIndex++}`;
+    const { rowCount } = await client.query(query, values);
+    return (rowCount ?? 0) > 0;
   } finally {
     client.release();
   }

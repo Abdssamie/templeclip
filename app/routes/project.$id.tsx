@@ -2,9 +2,9 @@ import { useParams, useNavigate, useLoaderData, type LoaderFunctionArgs } from "
 import React, { useEffect } from "react";
 import TimelineEditor from "./home";
 import { auth } from "~/lib/auth.server";
-import { loadTimeline } from "~/lib/timeline.store";
 import type { TimelineState } from "~/components/timeline/types";
 import { IdParamSchema } from "~/schemas";
+import { getProjectById } from "~/lib/projects.repo";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // SSR gate: verify auth
@@ -21,8 +21,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   // Validate route param
   const id = IdParamSchema.parse(params.id);
+  
   // Optionally prefetch timeline to hydrate client faster
-  const timeline = await loadTimeline(id);
+  const timeline = (await getProjectById(id))?.timeline ?? undefined;
+  
   return { timeline };
 }
 

@@ -46,7 +46,7 @@ export interface TextProperties {
 export interface MediaBinItem extends BaseScrubber {
   name: string;
   durationInSeconds: number; // For media, to calculate initial width
-  assetId?: string | null; // Database asset ID (optional - only for R2 assets)
+  assetId?: string | null; 
 
   // Upload tracking properties
   uploadProgress: number | null; // 0-100, null when upload complete

@@ -9,8 +9,8 @@ import {
   getProjectScenes,
   listProjectsByUser,
   updateProjectScenes,
+  updateProjectState,
 } from "~/lib/projects.repo";
-import { loadProjectState, saveProjectState } from "~/lib/timeline.store";
 import {
   CreateProjectBodySchema,
   PatchProjectBodySchema,
@@ -39,12 +39,12 @@ export async function loader({ request }: { request: Request }) {
     const id = m[1];
     const proj = await getProjectById(id);
     if (!proj || proj.user_id !== userId) return new Response("Not Found", { status: 404 });
-    const state = await loadProjectState(id);
+    const state = await getProjectById(id);
     const scenes: Scene[] = await getProjectScenes(id);
     const payload = ProjectStateResponseSchema.parse({
       project: proj,
-      timeline: state.timeline,
-      textBinItems: state.textBinItems,
+      timeline: state?.timeline,
+      textBinItems: state?.textBinItems,
       scenes: scenes,
     });
     return new Response(JSON.stringify(payload), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -173,10 +173,10 @@ export async function action({ request }: { request: Request }) {
       await pool.end();
     }
     if (timeline || textBinItems) {
-      const prev = await loadProjectState(id);
-      await saveProjectState(id, {
-        timeline: timeline ?? prev.timeline,
-        textBinItems: textBinItems ?? prev.textBinItems,
+      const prev = await getProjectById(id);
+      await updateProjectState(id, userId, {
+        timeline: timeline ?? prev?.timeline ?? { tracks: [] },
+        textBinItems: textBinItems ?? prev?.textBinItems,
       });
     }
     if (scenes) {
