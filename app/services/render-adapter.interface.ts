@@ -39,7 +39,7 @@ export interface StartRenderResult {
 
 /**
  * Render adapter interface - abstracts the rendering mechanism
- * (Lambda vs Docker)
+ * Uses Docker-based rendering via the render service
  */
 export interface RenderAdapter {
   /**
@@ -57,6 +57,5 @@ export interface RenderAdapter {
  * Configuration for render adapter factory
  */
 export interface RenderAdapterConfig {
-  useDocker: boolean;
   dockerUrl?: string;
 }

@@ -9,7 +9,7 @@ import { resolveR2UrlsInTimeline } from "~/utils/resolve-r2-urls.server";
 
 /**
  * POST /api/render
- * Start a Lambda render job
+ * Start a video render job via Docker render service
  *
  * Request body (scene-based):
  * {
@@ -77,8 +77,8 @@ export async function action({ request }: ActionFunctionArgs) {
         applyElasticityToTimeline(timelineData, projectScenes);
       }
 
-      // Resolve R2 URLs for Lambda access (24 hours expiration for long renders)
-      console.log("Resolving R2 URLs for Lambda rendering...");
+      // Resolve R2 URLs for render service access (24 hours expiration for long renders)
+      console.log("Resolving R2 URLs for rendering...");
       const resolvedTimelineData = await resolveR2UrlsInTimeline(
         userId,
         timelineData,
@@ -130,8 +130,8 @@ export async function action({ request }: ActionFunctionArgs) {
         return Response.json({ error: "Missing or invalid required field: durationInFrames" }, { status: 400 });
       }
 
-      // Resolve R2 URLs for Lambda access
-      console.log("Resolving R2 URLs for Lambda rendering (legacy timeline)...");
+      // Resolve R2 URLs for render service access
+      console.log("Resolving R2 URLs for rendering (legacy timeline)...");
       const resolvedTimelineData = await resolveR2UrlsInTimeline(
         userId,
         body.timelineData,
@@ -159,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
   } catch (error) {
-    console.error("Error starting Lambda render:", error);
+    console.error("Error starting render:", error);
 
     // Determine if this is a validation error or server error
     const errorMessage = error instanceof Error ? error.message : "Failed to start render";
@@ -175,7 +175,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 /**
  * GET /api/render?renderId=X&bucketName=Y
- * Poll the progress of a Lambda render job
+ * Poll the progress of a render job
  *
  * Query parameters:
  * - renderId: string (required)
