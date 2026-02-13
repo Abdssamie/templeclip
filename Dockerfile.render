@@ -71,4 +71,4 @@ RUN mkdir -p /tmp/renders
 EXPOSE 8080
 
 # Run render server
-CMD ["pnpm", "exec", "tsx", "app/services/render-server.ts"]
+CMD ["pnpm", "exec", "tsx", "app/services/render/index.ts"]
