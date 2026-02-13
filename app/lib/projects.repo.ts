@@ -134,3 +134,86 @@ export async function updateProjectScenes(id: string, userId: string, scenes: Sc
     client.release();
   }
 }
+
+export type ExportRecord = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  render_status: string;
+  output_asset_id: string | null;
+  thumbnail_asset_id: string | null;
+  duration_seconds: number | null;
+  label: string | null;
+  file_size_bytes: number | null;
+  created_at: string;
+  completed_at: string | null;
+  render_error: string | null;
+};
+
+export async function listExportsByProject(projectId: string, userId: string): Promise<ExportRecord[]> {
+  const client = await getPool().connect();
+  try {
+    const { rows } = await client.query<ExportRecord>(
+      `SELECT * FROM exports 
+       WHERE project_id = $1 AND user_id = $2 
+       ORDER BY created_at DESC`,
+      [projectId, userId],
+    );
+    return rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function deleteExportById(exportId: string, userId: string): Promise<boolean> {
+  const client = await getPool().connect();
+  try {
+    const { rowCount } = await client.query(`DELETE FROM exports WHERE id = $1 AND user_id = $2`, [exportId, userId]);
+    return (rowCount ?? 0) > 0;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateExportMetadata(
+  exportId: string,
+  metadata: {
+    thumbnailAssetId?: string;
+    durationSeconds?: number;
+    label?: string;
+    fileSizeBytes?: number;
+  },
+): Promise<boolean> {
+  const client = await getPool().connect();
+  try {
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let paramIndex = 1;
+
+    if (metadata.thumbnailAssetId !== undefined) {
+      updates.push(`thumbnail_asset_id = $${paramIndex++}`);
+      values.push(metadata.thumbnailAssetId);
+    }
+    if (metadata.durationSeconds !== undefined) {
+      updates.push(`duration_seconds = $${paramIndex++}`);
+      values.push(metadata.durationSeconds);
+    }
+    if (metadata.label !== undefined) {
+      updates.push(`label = $${paramIndex++}`);
+      values.push(metadata.label);
+    }
+    if (metadata.fileSizeBytes !== undefined) {
+      updates.push(`file_size_bytes = $${paramIndex++}`);
+      values.push(metadata.fileSizeBytes);
+    }
+
+    if (updates.length === 0) return false;
+
+    values.push(exportId);
+    const query = `UPDATE exports SET ${updates.join(", ")} WHERE id = $${paramIndex}`;
+    const { rowCount } = await client.query(query, values);
+    return (rowCount ?? 0) > 0;
+  } finally {
+    client.release();
+  }
+}
