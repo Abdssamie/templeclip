@@ -22,6 +22,7 @@ import {
   Group,
   Ungroup,
   Clapperboard,
+  Film,
 } from "lucide-react";
 
 // Custom video controls
@@ -55,12 +56,10 @@ import { useScenes } from "~/hooks/useScenes";
 import {
   FPS,
   type MediaBinItem,
-  type TimelineDataItem,
   type Transition,
   type TrackState,
   type ScrubberState,
   type TimelineState,
-  type TemplateVariable,
 } from "~/components/timeline/types";
 import { useNavigate, useParams, useLocation } from "react-router";
 import { KimuLogo } from "~/components/ui/KimuLogo";
@@ -317,7 +316,7 @@ export default function TimelineEditor() {
   }, []);
 
   const openSection = useCallback(
-    (section: "media-bin" | "text-editor" | "transitions" | "scenes") => {
+    (section: "media-bin" | "text-editor" | "transitions" | "scenes" | "exports") => {
       const isProjectRoot = /^\/project\/[^/]+\/?$/.test(location.pathname);
       const isActive =
         (section === "media-bin" && (location.pathname.includes("/media-bin") || isProjectRoot)) ||
@@ -974,6 +973,14 @@ export default function TimelineEditor() {
               onClick={() => openSection("scenes")}
               title="Scenes">
               <Clapperboard className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-9 w-9 p-0 ${location.pathname.includes("/exports") ? "bg-background text-primary" : "text-muted-foreground"}`}
+              onClick={() => openSection("exports")}
+              title="Exports">
+              <Film className="h-5 w-5" />
             </Button>
             <Button
               variant="ghost"

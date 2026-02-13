@@ -2,11 +2,12 @@ import { ExportsPanel } from "~/components/exports/ExportsPanel";
 import { useParams } from "react-router";
 
 export default function ExportsRoute() {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { id } = useParams<{ id: string }>();
 
-  if (!projectId) {
-    return <div>Project ID required</div>;
+  // This route is nested under /project/:id, so id should always exist
+  if (!id) {
+    throw new Error("Project ID is required");
   }
 
-  return <ExportsPanel projectId={projectId} />;
+  return <ExportsPanel projectId={id} />;
 }
