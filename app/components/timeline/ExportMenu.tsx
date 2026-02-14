@@ -31,7 +31,9 @@ interface ExportMenuProps {
   onSave: () => Promise<void>;
   // Render handlers
   onRenderTimeline: (
+    projectId: string,
     timelineData: TimelineDataItem[],
+    scenes: Array<{ sceneId: string; variables: Record<string, string>; duration?: number }>,
     compositionWidth: number,
     compositionHeight: number,
     durationInFrames: number,
@@ -89,7 +91,24 @@ export function ExportMenu({
       return;
     }
 
-    onRenderTimeline(timelineData, isAutoSize ? 1920 : width, isAutoSize ? 1080 : height, duration);
+    if (!projectId || projectId === "") {
+      toast.error("No project ID found");
+      return;
+    }
+
+    if (scenes.length === 0) {
+      toast.error("No scenes to render. Create scenes first!");
+      return;
+    }
+
+    // Build scene requests for all scenes
+    const sceneRequests = scenes.map((scene) => ({
+      sceneId: scene.id,
+      variables: {},
+      // Use default duration for each scene - the backend will calculate from timeline
+    }));
+
+    onRenderTimeline(projectId, timelineData, sceneRequests, isAutoSize ? 1920 : width, isAutoSize ? 1080 : height, duration);
   };
 
   const handleExportAllScenes = async () => {

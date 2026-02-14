@@ -140,8 +140,8 @@ export default function LeftPanel({
         )}
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-hidden">
-          <div className="p-2 h-full">
+        <div className="flex-1 min-h-0 relative">
+          <div className="absolute inset-0 p-2">
             <Outlet
               context={{
                 // MediaBin props
