@@ -3,8 +3,6 @@ import { requireUserId } from "~/lib/auth.utils";
 import { createRenderAdapter } from "~/services/render-adapter.factory";
 import type { RenderInput } from "~/services/render-adapter.interface";
 import { getProjectScenes } from "~/lib/projects.repo";
-import { applyElasticityToTimeline } from "~/utils/elasticity";
-import { buildTimelineFromScenes, type SceneRenderRequest } from "~/utils/timeline-builder.server";
 import { resolveR2UrlsInTimeline } from "~/utils/resolve-r2-urls.server";
 
 /**
@@ -55,12 +53,19 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Fetch scenes if projectId is provided (for hydration of scene scrubbers)
-    let scenes = [];
+    let scenes = []
+
+    console.log("[SCENES DEBUG]: body payload", body);
+
     if (body.projectId && typeof body.projectId === "string") {
+      console.log("[SCENES DEBUG]: Found correct api request body including projectId")
       scenes = await getProjectScenes(body.projectId);
     } else if (Array.isArray(body.scenes)) {
+      console.log("[SCENES DEBUG]: Didn't find correct api request body including projectId")
       scenes = body.scenes;
     }
+
+    console.log("[SCENES DEBUG]: ", scenes)
 
     // Resolve R2 URLs for render service access
     console.log("Resolving R2 URLs for rendering (timeline)...");

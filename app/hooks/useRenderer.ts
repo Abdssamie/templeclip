@@ -130,7 +130,6 @@ export const useRenderer = () => {
       compositionHeight: number,
       applyElasticity?: boolean,
     ) => {
-      const sceneNames = scenes.map((s) => s.sceneId).join(", ");
       const label = scenes.length === 1 ? "scene" : `${scenes.length} scenes`;
 
       await startRender(
@@ -149,14 +148,22 @@ export const useRenderer = () => {
 
   const handleRenderTimeline = useCallback(
     async (
+      projectId: string,
       timelineData: TimelineDataItem[],
+      scenes: Array<{
+        sceneId: string;
+        variables: Record<string, string>;
+        duration?: number;
+      }>,
       compositionWidth: number,
       compositionHeight: number,
       durationInFrames: number,
     ) => {
       await startRender(
         {
+          projectId,
           timelineData,
+          scenes,
           compositionWidth,
           compositionHeight,
           durationInFrames,
