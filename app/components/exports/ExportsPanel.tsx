@@ -34,6 +34,7 @@ export function ExportsPanel({ projectId }: ExportsPanelProps) {
   const fetchExports = useCallback(async () => {
     try {
       const response = await axios.get(`/api/exports?projectId=${projectId}`);
+      console.log("Fetched exports:", response.data.exports);
       setExports(response.data.exports || []);
     } catch (error) {
       console.error("Failed to fetch exports:", error);

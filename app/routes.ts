@@ -14,6 +14,7 @@ export default [
     route("scenes", "components/scenes/ScenesPage.tsx"),
     route("exports", "routes/exports.tsx"),
   ]),
+  route("/api/exports/*", "routes/api.exports.$.tsx"),
   route("/api/auth/*", "routes/api.auth.$.tsx"),
   route("/api/projects/*", "routes/api.projects.$.tsx"),
   route("/api/assets/*", "routes/api.assets.$.tsx"),

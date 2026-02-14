@@ -18,6 +18,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   try {
     const exports = await listExportsByProject(projectId, userId);
+    
+    console.log("Exports for project", projectId, exports);
 
     // Join with assets to get file URLs
     const pool = getPool();
