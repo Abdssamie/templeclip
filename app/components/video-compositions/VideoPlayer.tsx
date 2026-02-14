@@ -278,8 +278,6 @@ export function TimelineComposition({
       }
       case "scene": {
         // Find the scene definition
-        // We need to use sceneId from the scrubber, not the scrubber's own id
-        // The type guard ensures we can access sceneId safely
         const sceneId = "sceneId" in scrubber ? scrubber.sceneId : null;
 
         if (!sceneId) {
