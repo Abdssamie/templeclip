@@ -69,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     console.log(`[Render] Resolving R2 URLs with ${projectScenes.length} project scenes context`);
     const resolvedTimelineData = await resolveR2UrlsInTimeline(userId, timelineData, projectScenes, 86400);
-    
+
     // Merge all variables from scene requests
     const mergedVariables: Record<string, string> = {};
     for (const sceneRequest of sceneRequests) {
@@ -80,8 +80,8 @@ export async function action({ request }: ActionFunctionArgs) {
       userId,
       timelineData: resolvedTimelineData,
       compositionWidth: compositionWidth,
-      compositionHeight:compositionHeight,
-      durationInFrames: body.durationInFrames || totalDuration * 30,
+      compositionHeight: compositionHeight,
+      durationInFrames: body.durationInFrames || Math.ceil(totalDuration * 30),
       scenes: projectScenes,
       variableValues: mergedVariables,
     };
