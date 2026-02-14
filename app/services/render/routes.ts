@@ -35,6 +35,7 @@ export function setupRoutes(app: express.Express) {
 
   app.post("/render", rateLimiter, authenticateToken, async (req, res) => {
     const validation = RenderRequestSchema.safeParse(req.body);
+
     if (!validation.success) {
       return res.status(400).json({ error: "Invalid request data", details: validation.error.issues });
     }

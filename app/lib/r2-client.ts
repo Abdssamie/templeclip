@@ -4,6 +4,7 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
   CopyObjectCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Upload } from "@aws-sdk/lib-storage";
@@ -216,6 +217,43 @@ export function getPublicR2Url(r2Key: string): string {
  */
 export function isR2Configured(): boolean {
   return !!(CLOUDFLARE_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY);
+}
+
+/**
+ * List all user renders from R2
+ *
+ * @param userId - User ID
+ * @returns Array of render objects
+ */
+export async function listUserRenders(userId: string) {
+  const prefix = `${userId}/renders/`;
+  const command = new ListObjectsV2Command({
+    Bucket: R2_BUCKET_NAME,
+    Prefix: prefix,
+  });
+
+  const response = await r2Client.send(command);
+  const contents = response.Contents || [];
+
+  const renders = await Promise.all(
+    contents.map(async (obj) => {
+      // Ensure Key, LastModified, and Size are present
+      if (!obj.Key || !obj.LastModified || obj.Size === undefined) return null;
+
+      const url = await getPresignedDownloadUrl(obj.Key);
+      return {
+        key: obj.Key,
+        lastModified: obj.LastModified,
+        size: obj.Size,
+        url,
+      };
+    }),
+  );
+
+  // Filter out any nulls (though unlikely with S3 response)
+  const validRenders = renders.filter((r): r is NonNullable<typeof r> => r !== null);
+
+  return validRenders.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
 }
 
 export { r2Client, R2_BUCKET_NAME };

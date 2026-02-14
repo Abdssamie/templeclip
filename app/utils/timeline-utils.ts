@@ -5,7 +5,7 @@ import {
   type ScrubberState,
 } from "../components/timeline/types";
 
-export function transformTimelineToData(timeline: TimelineState, pixelsPerSecond: number): TimelineDataItem[] {
+export const transformTimelineToData = (timeline: TimelineState, pixelsPerSecond: number): TimelineDataItem[] => {
   const scrubbers: TimelineDataItem["scrubbers"] = [];
 
   for (const track of timeline.tracks) {
