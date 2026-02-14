@@ -1,4 +1,9 @@
-import { type TimelineState, type TimelineDataItem, type Transition } from "../components/timeline/types";
+import {
+  type TimelineState,
+  type TimelineDataItem,
+  type Transition,
+  type ScrubberState,
+} from "../components/timeline/types";
 
 export function transformTimelineToData(timeline: TimelineState, pixelsPerSecond: number): TimelineDataItem[] {
   const scrubbers: TimelineDataItem["scrubbers"] = [];
@@ -63,4 +68,31 @@ export function transformTimelineToData(timeline: TimelineState, pixelsPerSecond
       transitions: transitions,
     },
   ];
+}
+
+/**
+ * Sanitizes timeline state by removing local blob URLs which are session-specific
+ * and shouldn't be persisted to database or used across reloads.
+ */
+export function sanitizeTimelineState(timeline: TimelineState): TimelineState {
+  const sanitizeScrubber = (scrubber: ScrubberState): ScrubberState => {
+    const sanitized = {
+      ...scrubber,
+      mediaUrlLocal: null, // Always clear local blob URLs
+    };
+
+    if (sanitized.groupped_scrubbers) {
+      sanitized.groupped_scrubbers = sanitized.groupped_scrubbers.map(sanitizeScrubber);
+    }
+
+    return sanitized;
+  };
+
+  return {
+    ...timeline,
+    tracks: timeline.tracks.map((track) => ({
+      ...track,
+      scrubbers: track.scrubbers.map(sanitizeScrubber),
+    })),
+  };
 }

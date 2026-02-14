@@ -1,70 +1,69 @@
-import { SceneTabs } from "~/components/scenes/SceneTabs";
-import React, { useRef, useEffect, useCallback, useState } from "react";
-import type { ImperativePanelHandle } from "react-resizable-panels";
-import type { PlayerRef, CallbackListener } from "@remotion/player";
+import type { CallbackListener, PlayerRef } from "@remotion/player";
 import {
-  Play,
-  Pause,
-  Upload,
-  Download,
-  Settings,
-  Plus,
-  Minus,
-  Scissors,
-  Save as SaveIcon,
-  ChevronRight,
-  ChevronLeft,
-  File,
-  Type,
   BetweenVerticalEnd,
+  ChevronLeft,
+  ChevronRight,
+  Clapperboard,
   CornerUpLeft,
   CornerUpRight,
-  Group,
-  Ungroup,
-  Clapperboard,
+  File,
   Film,
+  Group,
+  Minus,
+  Pause,
+  Play,
+  Plus,
+  Save as SaveIcon,
+  Scissors,
+  Settings,
+  Type,
+  Ungroup,
+  Upload,
 } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import type { ImperativePanelHandle } from "react-resizable-panels";
+import { SceneTabs } from "~/components/scenes/SceneTabs";
 
 // Custom video controls
-import { MuteButton, FullscreenButton } from "~/components/ui/video-controls";
+import { FullscreenButton, MuteButton } from "~/components/ui/video-controls";
 
 // Components
+import { toast } from "sonner";
 import LeftPanel from "~/components/editor/LeftPanel";
-import { VideoPlayer } from "~/components/video-compositions/VideoPlayer";
-import { RenderStatus } from "~/components/timeline/RenderStatus";
+import { ExportMenu } from "~/components/timeline/ExportMenu";
 import { TimelineRuler } from "~/components/timeline/TimelineRuler";
 import { TimelineTracks } from "~/components/timeline/TimelineTracks";
-import { Button } from "~/components/ui/button";
-import { ProfileMenu } from "~/components/ui/ProfileMenu";
-import { ExportMenu } from "~/components/timeline/ExportMenu";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { ProfileMenu } from "~/components/ui/ProfileMenu";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "~/components/ui/resizable";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
-import { Input } from "~/components/ui/input";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "~/components/ui/resizable";
-import { toast } from "sonner";
+import { VideoPlayer } from "~/components/video-compositions/VideoPlayer";
 
 // Hooks
-import { useTimeline } from "~/hooks/useTimeline";
 import { useMediaBin } from "~/hooks/useMediaBin";
-import { useRuler } from "~/hooks/useRuler";
 import { useRenderer } from "~/hooks/useRenderer";
+import { useRuler } from "~/hooks/useRuler";
 import { useScenes } from "~/hooks/useScenes";
+import { useTimeline } from "~/hooks/useTimeline";
 
 // Types and constants
+import { useLocation, useNavigate, useParams } from "react-router";
 import {
   FPS,
   type MediaBinItem,
-  type Transition,
-  type TrackState,
   type ScrubberState,
   type TimelineState,
+  type TrackState,
+  type Transition,
 } from "~/components/timeline/types";
-import { useNavigate, useParams, useLocation } from "react-router";
+import { AuthOverlay } from "~/components/ui/AuthOverlay";
 import { KimuLogo } from "~/components/ui/KimuLogo";
 import { useAuth } from "~/hooks/useAuth";
-import { AuthOverlay } from "~/components/ui/AuthOverlay";
+import { sanitizeTimelineState } from "~/utils/timeline-utils";
 
 export default function TimelineEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,6 +95,7 @@ export default function TimelineEditor() {
   useEffect(() => {
     setHeightInput(String(height));
   }, [height]);
+
   const [starCount, setStarCount] = useState<number | null>(null);
   // Avoid initial blank render; don't delay render on a 'mounted' gate
 
@@ -129,20 +129,21 @@ export default function TimelineEditor() {
     handleGroupScrubbers,
     handleUngroupScrubber,
     handleMoveGroupToMediaBin,
+
     // Transition
     handleAddTransitionToTrack,
-    onDropOnTrack,
     onDropSceneOnTrack,
     onDeleteTransition,
-    getConnectedElements,
     handleUpdateScrubberWithLocking,
     setTimelineFromServer,
+
     // undo/redo
     undo,
     redo,
     canUndo,
     canRedo,
     snapshotTimeline,
+
     // Variable management
     assignVariableToScrubber,
     getVariablesFromTimeline,
@@ -372,7 +373,7 @@ export default function TimelineEditor() {
       }
       const j = await res.json();
       setProjectName(j.project?.name || "Project");
-      if (j.timeline) setTimelineFromServer(j.timeline);
+      if (j.timeline) setTimelineFromServer(sanitizeTimelineState(j.timeline));
       // Use saved textBinItems if present, else extract from timeline
       try {
         if (Array.isArray(j.textBinItems) && j.textBinItems.length) {
@@ -490,13 +491,14 @@ export default function TimelineEditor() {
       // Step 3: Save the main timeline
       const timelineToSave = activeSceneId !== null ? projectTimeline : currentTimelineState;
       if (timelineToSave) {
+        const sanitizedTimeline = sanitizeTimelineState(timelineToSave);
         const textItemsPayload = getMediaBinItems().filter((i) => i.mediaType === "text");
         const res = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            timeline: timelineToSave,
+            timeline: sanitizedTimeline,
             textBinItems: textItemsPayload,
           }),
         });

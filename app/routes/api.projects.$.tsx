@@ -1,12 +1,10 @@
 import { Pool } from "pg";
-import type { MediaBinItem, Scene, TimelineState } from "~/components/timeline/types";
 import { listAssetsByUser, softDeleteAsset } from "~/lib/assets.repo.server";
 import { requireUserId } from "~/lib/auth.utils";
 import {
   createProject,
   deleteProjectById,
   getProjectById,
-  getProjectScenes,
   listProjectsByUser,
   updateProjectScenes,
   updateProjectState,
@@ -139,10 +137,12 @@ export async function action({ request }: { request: Request }) {
     if (!proj || proj.user_id !== userId) return new Response("Not Found", { status: 404 });
     const body = await request.json().catch(() => ({}));
     const parsed = PatchProjectBodySchema.safeParse(body);
-    const name: string | undefined = parsed.success ? parsed.data.name : undefined;
-    const timeline: TimelineState | undefined = parsed.success ? parsed.data.timeline : undefined;
-    const textBinItems: MediaBinItem[] | undefined = parsed.success ? parsed.data.textBinItems : undefined;
-    const scenes: Scene[] | undefined = parsed.success ? parsed.data.scenes : undefined;
+    
+    const name = parsed.success ? parsed.data.name : undefined;
+    const timeline = parsed.success ? parsed.data.timeline : undefined;
+    const textBinItems = parsed.success ? parsed.data.textBinItems : undefined;
+    const scenes = parsed.success ? parsed.data.scenes : undefined;
+    
     if (!name && !timeline && !textBinItems && !scenes)
       return new Response(JSON.stringify({ error: "No changes" }), {
         status: 400,

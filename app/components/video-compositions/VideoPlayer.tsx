@@ -1,11 +1,12 @@
 import { Player, type PlayerRef } from "@remotion/player";
-import { Sequence, AbsoluteFill, Img, Video, Audio, Html5Video, Html5Audio } from "remotion";
+import { Sequence, AbsoluteFill, Img, Html5Video, Html5Audio } from "remotion";
 import { linearTiming, springTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { iris } from "@remotion/transitions/iris";
 import { wipe } from "@remotion/transitions/wipe";
 import { flip } from "@remotion/transitions/flip";
 import { slide } from "@remotion/transitions/slide";
+import { clockWipe } from "@remotion/transitions/clock-wipe";
 import React, { useMemo } from "react";
 import {
   FPS,
@@ -82,7 +83,7 @@ const SafeImg = (props: React.ComponentProps<typeof Img>) => {
   );
 };
 
-const SafeVideo = (props: React.ComponentProps<typeof Video>) => {
+const SafeVideo = (props: React.ComponentProps<typeof Html5Video>) => {
   const [error, setError] = React.useState(false);
   if (error) return <MediaMissingFallback />;
   return (
@@ -97,7 +98,7 @@ const SafeVideo = (props: React.ComponentProps<typeof Video>) => {
   );
 };
 
-const SafeAudio = (props: React.ComponentProps<typeof Audio>) => {
+const SafeAudio = (props: React.ComponentProps<typeof Html5Audio>) => {
   const [error, setError] = React.useState(false);
   if (error) return null;
   return (
@@ -218,9 +219,7 @@ export function TimelineComposition({
         );
         break;
       case "image": {
-        const rawUrl = isRendering
-          ? scrubber.mediaUrlRemote || scrubber.mediaUrlLocal
-          : scrubber.mediaUrlLocal || scrubber.mediaUrlRemote;
+        const rawUrl = scrubber.mediaUrlRemote || scrubber.mediaUrlLocal;
         const imageUrl = resolveVariable(rawUrl, scrubber.variableName);
         content = (
           <AbsoluteFill
@@ -236,9 +235,7 @@ export function TimelineComposition({
         break;
       }
       case "video": {
-        const rawUrl = isRendering
-          ? scrubber.mediaUrlRemote || scrubber.mediaUrlLocal
-          : scrubber.mediaUrlLocal || scrubber.mediaUrlRemote;
+        const rawUrl = scrubber.mediaUrlRemote || scrubber.mediaUrlLocal;
         const videoUrl = resolveVariable(rawUrl, scrubber.variableName);
         content = (
           <AbsoluteFill
@@ -258,9 +255,7 @@ export function TimelineComposition({
         break;
       }
       case "audio": {
-        const rawUrl = isRendering
-          ? scrubber.mediaUrlRemote || scrubber.mediaUrlLocal
-          : scrubber.mediaUrlLocal || scrubber.mediaUrlRemote;
+        const rawUrl = scrubber.mediaUrlRemote || scrubber.mediaUrlLocal;
         const audioUrl = resolveVariable(rawUrl, scrubber.variableName);
         content = (
           <AbsoluteFill
@@ -325,9 +320,9 @@ export function TimelineComposition({
                 // Recursive call for nested structure
                 isRendering={isRendering}
                 selectedItem={null} // Don't select items inside nested scenes
-                setSelectedItem={() => { }} // No-op for nested selection
+                setSelectedItem={() => {}} // No-op for nested selection
                 timeline={scene.timeline} // Pass scene timeline
-                handleUpdateScrubber={() => { }} // No-op for nested updates (read-only)
+                handleUpdateScrubber={() => {}} // No-op for nested updates (read-only)
                 getPixelsPerSecond={PIXELS_PER_SECOND} // Use standard PPS for internal relative sizing
                 variableValues={mergedVariables}
                 scenes={scenes} // Pass scene context down for deeper recursion
