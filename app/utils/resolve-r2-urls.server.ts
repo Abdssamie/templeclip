@@ -38,8 +38,8 @@ async function resolveMediaUrl(
 ): Promise<string | null> {
   if (!mediaUrl) return null;
 
-  // If already resolved (not a server path), return as-is
-  if (!mediaUrl.startsWith("/api/assets/")) {
+  // If it doesn't look like an asset URL, return as-is
+  if (!mediaUrl.includes("/api/assets/")) {
     return mediaUrl;
   }
 
@@ -167,4 +167,57 @@ export async function resolveR2UrlsInTimeline(
   );
 
   return resolvedTimelineData;
+}
+
+/**
+ * Resolve all asset URLs in a list of scenes to R2 presigned URLs
+ * This handles the nested TimelineState structure used in Scene definitions
+ */
+export async function resolveR2UrlsInScenes(
+  userId: string,
+  scenes: Scene[],
+  expiresIn: number = 86400,
+): Promise<Scene[]> {
+  const urlCache = new Map<string, string>();
+
+  // Helper to resolve a single scrubber state
+  const resolveScrubberState = async (scrubber: ScrubberState): Promise<ScrubberState> => {
+    const resolved = { ...scrubber };
+
+    // Resolve direct media URLs
+    if (scrubber.mediaUrlRemote) {
+      resolved.mediaUrlRemote = await resolveMediaUrl(scrubber.mediaUrlRemote, userId, expiresIn, urlCache);
+    }
+
+    // Handle grouped scrubbers recursively
+    if (scrubber.groupped_scrubbers) {
+      resolved.groupped_scrubbers = await Promise.all(scrubber.groupped_scrubbers.map(resolveScrubberState));
+    }
+
+    return resolved;
+  };
+
+  // Helper to resolve a track
+  const resolveTrack = async (track: any): Promise<any> => {
+    return {
+      ...track,
+      scrubbers: await Promise.all(track.scrubbers.map(resolveScrubberState)),
+    };
+  };
+
+  // Helper to resolve a timeline state
+  const resolveTimelineState = async (timeline: any): Promise<any> => {
+    return {
+      ...timeline,
+      tracks: await Promise.all(timeline.tracks.map(resolveTrack)),
+    };
+  };
+
+  // Process all scenes
+  return Promise.all(
+    scenes.map(async (scene) => ({
+      ...scene,
+      timeline: await resolveTimelineState(scene.timeline),
+    }))
+  );
 }

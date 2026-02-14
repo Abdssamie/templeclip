@@ -7,6 +7,13 @@ import { deleteFromR2, copyInR2, getPresignedDownloadUrl, generateR2Key, R2_BUCK
 import { redirect } from "react-router";
 import crypto from "crypto";
 
+const APP_URL = process.env.APP_URL;
+if (!APP_URL) {
+  throw new Error("APP_URL environment variable is not set");
+} else {
+  console.log("APP_URL set to:", APP_URL);
+}
+
 function inferMediaTypeFromName(name: string, fallback: string = "application/octet-stream"): string {
   const ext = path.extname(name).toLowerCase();
   if ([".mp4", ".mov", ".webm", ".mkv", ".avi"].includes(ext)) return "video/*";
@@ -14,6 +21,7 @@ function inferMediaTypeFromName(name: string, fallback: string = "application/oc
   if ([".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"].includes(ext)) return "image/*";
   return fallback;
 }
+
 
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
@@ -37,7 +45,7 @@ export async function loader({ request }: { request: Request }) {
       durationInSeconds: r.duration_seconds, // camelCase for frontend
       created_at: r.created_at,
       r2_key: r.r2_key,
-      mediaUrlRemote: `/api/assets/${r.id}/raw`,
+      mediaUrlRemote: `${APP_URL}/api/assets/${r.id}/raw`,
     }));
     // Response validation schema
     const payload = { assets: items };
@@ -199,7 +207,7 @@ export async function action({ request }: { request: Request }) {
         asset: {
           id: record.id,
           name: record.original_name,
-          mediaUrlRemote: `/api/assets/${record.id}/raw`,
+          mediaUrlRemote: `${APP_URL}/api/assets/${record.id}/raw`,
           width: record.width,
           height: record.height,
           durationInSeconds: record.duration_seconds,

@@ -44,6 +44,8 @@ export async function executeRender(
     scenes,
     variableValues,
   };
+  
+  // TODO: Fix assets urls resolving issues inside docker renderer
 
   const composition = await selectComposition({
     serveUrl: bundled,

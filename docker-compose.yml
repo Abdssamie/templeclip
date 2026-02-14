@@ -36,6 +36,7 @@ services:
       HOST: 0.0.0.0
       PORT: 5173
       PROD_DOMAIN: ${PROD_DOMAIN}
+      APP_URL: ${APP_URL}
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,6 +99,7 @@ services:
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
       RENDER_SERVER_PORT: 8080
+      APP_URL: ${APP_URL}
     depends_on:
       redis:
         condition: service_healthy

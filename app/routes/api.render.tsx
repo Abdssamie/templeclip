@@ -3,7 +3,7 @@ import { requireUserId } from "~/lib/auth.utils";
 import { createRenderAdapter } from "~/services/render-adapter.factory";
 import type { RenderInput } from "~/services/render-adapter.interface";
 import { getProjectScenes } from "~/lib/projects.repo";
-import { resolveR2UrlsInTimeline } from "~/utils/resolve-r2-urls.server";
+import { resolveR2UrlsInTimeline, resolveR2UrlsInScenes } from "~/utils/resolve-r2-urls.server";
 
 /**
  * POST /api/render
@@ -69,12 +69,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Resolve R2 URLs for render service access
     console.log("Resolving R2 URLs for rendering (timeline)...");
-    const resolvedTimelineData = await resolveR2UrlsInTimeline(
-      userId,
-      body.timelineData,
-      scenes, // Pass actual scenes for nested resolution
-      86400, // 24 hours
-    );
+    const [resolvedTimelineData, resolvedScenes] = await Promise.all([
+      resolveR2UrlsInTimeline(
+        userId,
+        body.timelineData,
+        scenes, // Pass actual scenes for nested resolution
+        86400, // 24 hours
+      ),
+      resolveR2UrlsInScenes(userId, scenes, 86400),
+    ]);
 
     // Extract render input from request body
     const renderInput: RenderInput = {
@@ -83,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
       compositionWidth: body.compositionWidth,
       compositionHeight: body.compositionHeight,
       durationInFrames: body.durationInFrames,
-      scenes, // Pass scenes to render adapter so VideoPlayer can find them
+      scenes: resolvedScenes, // Pass scenes to render adapter so VideoPlayer can find them
     };
 
     // Create render adapter
