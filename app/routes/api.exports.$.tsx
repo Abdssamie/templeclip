@@ -1,63 +1,36 @@
 import { type LoaderFunctionArgs, type ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { requireUserId } from "~/lib/auth.utils";
-import { listExportsByProject, deleteExportById } from "~/lib/projects.repo";
-import { getPool } from "~/lib/db.server";
+import { listUserRenders, deleteFromR2 } from "~/lib/r2-client";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const url = new URL(request.url);
-  const projectId = url.searchParams.get("projectId");
 
-  if (!projectId) {
-    return new Response(JSON.stringify({ error: "projectId required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // Note: Ignore projectId for now (list all user renders).
 
   try {
-    const exports = await listExportsByProject(projectId, userId);
-    
-    console.log("Exports for project", projectId, exports);
+    const renders = await listUserRenders(userId);
 
-    // Join with assets to get file URLs
-    const pool = getPool();
-    const client = await pool.connect();
-    try {
-      const exportsWithAssets = await Promise.all(
-        exports.map(async (exp) => {
-          let videoUrl = null;
-          let thumbnailUrl = null;
+    const exports = renders.map((render) => {
+      // Extract ID from key (filename without .mp4 extension)
+      const filename = render.key.split("/").pop() || "";
+      const id = filename.replace(/\.mp4$/, "");
 
-          if (exp.output_asset_id) {
-            const { rows: videoRows } = await client.query(`SELECT public_url FROM assets WHERE id = $1`, [
-              exp.output_asset_id,
-            ]);
-            videoUrl = videoRows[0]?.public_url ?? null;
-          }
+      return {
+        id,
+        label: "Rendered Video",
+        thumbnailUrl: null,
+        videoUrl: render.url,
+        duration_seconds: null,
+        file_size_bytes: render.size,
+        created_at: render.lastModified.toISOString(),
+        render_status: "completed",
+      };
+    });
 
-          if (exp.thumbnail_asset_id) {
-            const { rows: thumbRows } = await client.query(`SELECT public_url FROM assets WHERE id = $1`, [
-              exp.thumbnail_asset_id,
-            ]);
-            thumbnailUrl = thumbRows[0]?.public_url ?? null;
-          }
-
-          return {
-            ...exp,
-            videoUrl,
-            thumbnailUrl,
-          };
-        }),
-      );
-
-      return new Response(JSON.stringify({ exports: exportsWithAssets }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    } finally {
-      client.release();
-    }
+    return new Response(JSON.stringify({ exports }), {
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Failed to list exports:", error);
     return new Response(JSON.stringify({ error: "Failed to list exports" }), {
@@ -68,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 const DeleteExportSchema = z.object({
-  exportId: z.string().uuid(),
+  exportId: z.string(),
 });
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -85,14 +58,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const body = await request.json();
     const { exportId } = DeleteExportSchema.parse(body);
 
-    const success = await deleteExportById(exportId, userId);
-
-    if (!success) {
-      return new Response(JSON.stringify({ error: "Export not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    const key = `${userId}/renders/${exportId}.mp4`;
+    await deleteFromR2(key);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json" },
