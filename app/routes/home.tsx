@@ -467,7 +467,6 @@ export default function TimelineEditor() {
   // Save timeline to server
   const handleSaveTimeline = useCallback(async () => {
     try {
-      toast.info("Saving entire project...");
       const id = projectId || (window.location.pathname.match(/\/project\/([^/]+)/)?.[1] ?? "");
       if (!id) {
         toast.error("No project ID");
