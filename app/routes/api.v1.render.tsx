@@ -81,6 +81,22 @@ export async function action({ request }: ActionFunctionArgs) {
       const result = await adapter.startRender(renderInput);
 
       return Response.json({ renderId: result.renderId, bucketName: result.bucketName });
+    } else if (body.timelineData) {
+      // Legacy Timeline-based render request
+      const renderInput: RenderInput = {
+        userId,
+        timelineData: body.timelineData,
+        compositionWidth: body.compositionWidth || 1920,
+        compositionHeight: body.compositionHeight || 1080,
+        durationInFrames: body.durationInFrames || 300,
+        variableValues: body.variableValues,
+      };
+
+      const result = await adapter.startRender(renderInput);
+
+      return Response.json({ renderId: result.renderId, bucketName: result.bucketName });
+    } else {
+      return Response.json({ error: "Invalid request: Missing projectId/scenes OR timelineData" }, { status: 400 });
     }
   } catch (error) {
     console.error("Error starting render:", error);
