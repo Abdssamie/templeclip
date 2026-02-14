@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const RenderRequestSchema = z.object({
+  userId: z.string(),
   timelineData: z.array(z.record(z.string(), z.any())).max(1000, "Timeline too large (max 1000 items)"),
   scenes: z.array(z.record(z.string(), z.any())).max(100, "Too many scenes (max 100)"),
   width: z.number().int().min(320).max(3840).default(1920),

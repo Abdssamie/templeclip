@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function executeRender(
   jobId: string,
+  userId: string,
   data: RenderJobData,
   onProgress: (progress: number) => void | Promise<void>,
 ): Promise<string> {
@@ -66,7 +67,7 @@ export async function executeRender(
     throw new Error("Failed to render video: no buffer returned");
   }
 
-  const r2Key = `renders/${jobId}.mp4`;
+  const r2Key = `${userId}/renders/${jobId}.mp4`;
   await uploadToR2(r2Key, buffer, "video/mp4");
 
   return getPresignedDownloadUrl(r2Key);

@@ -89,6 +89,7 @@ export class DockerRenderAdapter implements RenderAdapter {
     try {
       // Map interface fields to schema fields
       const requestBody = {
+        userId: input.userId,
         timelineData: input.timelineData,
         scenes: input.scenes ?? [],
         width: input.compositionWidth,

@@ -5,6 +5,7 @@ import type { TimelineDataItem, Scene } from "~/components/timeline/types";
  * Input props for rendering a timeline composition
  */
 export interface RenderInput {
+  userId: string;
   timelineData: TimelineDataItem[];
   compositionWidth: number;
   compositionHeight: number;

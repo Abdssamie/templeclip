@@ -26,7 +26,7 @@ export const renderWorker = new Worker<RenderJobData, RenderJobResult>(
     jobStatusCache.set(jobId, { status: "active", progress: 0 });
 
     try {
-      const outputUrl = await executeRender(jobId, job.data, async (progress) => {
+      const outputUrl = await executeRender(jobId, job.data.userId, job.data, async (progress) => {
         await job.updateProgress(progress);
         jobStatusCache.set(jobId, { status: "active", progress });
       });

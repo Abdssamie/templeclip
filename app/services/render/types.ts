@@ -1,6 +1,7 @@
 export type JobStatus = "queued" | "active" | "completed" | "failed";
 
 export interface RenderJobData {
+  userId: string;
   timelineData: unknown[];
   width: number;
   height: number;

@@ -100,6 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // Start render
       const result = await adapter.startRender({
+        userId,
         timelineData: resolvedTimelineData,
         compositionWidth,
         compositionHeight,
@@ -141,6 +142,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // Extract render input from request body
       const renderInput: RenderInput = {
+        userId,
         timelineData: resolvedTimelineData,
         compositionWidth: body.compositionWidth,
         compositionHeight: body.compositionHeight,

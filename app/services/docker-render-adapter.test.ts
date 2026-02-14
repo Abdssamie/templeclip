@@ -16,6 +16,7 @@ describe("DockerRenderAdapter", () => {
     it("should throw error for invalid duration", async () => {
       await expect(
         adapter.startRender({
+          userId: "test-user",
           timelineData: [],
           compositionWidth: 1920,
           compositionHeight: 1080,
@@ -31,6 +32,7 @@ describe("DockerRenderAdapter", () => {
       });
 
       const result = await adapter.startRender({
+        userId: "test-user",
         timelineData: [],
         compositionWidth: 1920,
         compositionHeight: 1080,
@@ -53,6 +55,7 @@ describe("DockerRenderAdapter", () => {
 
       await expect(
         adapter.startRender({
+          userId: "test-user",
           timelineData: [],
           compositionWidth: 1920,
           compositionHeight: 1080,

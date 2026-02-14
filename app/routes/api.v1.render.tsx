@@ -70,31 +70,9 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const renderInput: RenderInput = {
+        userId,
         timelineData: resolvedTimelineData,
-        compositionWidth,
-        compositionHeight,
-        durationInFrames: finalDurationInFrames,
-        scenes: projectScenes,
-        variableValues: mergedVariables,
-      };
 
-      const result = await adapter.startRender(renderInput);
-
-      return Response.json({ renderId: result.renderId, bucketName: result.bucketName });
-    } else {
-      // Legacy timeline-based
-      if (!Array.isArray(body.timelineData)) return Response.json({ error: "Missing timelineData" }, { status: 400 });
-      if (typeof body.compositionWidth !== "number")
-        return Response.json({ error: "Missing compositionWidth" }, { status: 400 });
-      if (typeof body.compositionHeight !== "number")
-        return Response.json({ error: "Missing compositionHeight" }, { status: 400 });
-      if (typeof body.durationInFrames !== "number")
-        return Response.json({ error: "Missing durationInFrames" }, { status: 400 });
-
-      const resolvedTimelineData = await resolveR2UrlsInTimeline(userId, body.timelineData, [], 86400);
-
-      const renderInput: RenderInput = {
-        timelineData: resolvedTimelineData,
         compositionWidth: body.compositionWidth,
         compositionHeight: body.compositionHeight,
         durationInFrames: body.durationInFrames,
