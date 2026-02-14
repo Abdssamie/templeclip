@@ -11,16 +11,7 @@ import { resolveR2UrlsInTimeline } from "~/utils/resolve-r2-urls.server";
  * POST /api/render
  * Start a video render job via Docker render service
  *
- * Request body (scene-based):
- * {
- *   projectId: string,
- *   scenes: [{ sceneId: string, variables: Record<string, string>, duration?: number }],
- *   compositionWidth?: number,
- *   compositionHeight?: number,
- *   applyElasticity?: boolean
- * }
- *
- * OR (timeline-based):
+ * Request body:
  * {
  *   timelineData: TimelineDataItem[],
  *   compositionWidth: number,
@@ -46,120 +37,61 @@ export async function action({ request }: ActionFunctionArgs) {
       return Response.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    // Check if this is a scene-based request or timeline-based request
-    if (body.projectId && body.scenes) {
-      // Scene-based render request
-      if (typeof body.projectId !== "string") {
-        return Response.json({ error: "Missing required field: projectId" }, { status: 400 });
-      }
-
-      if (!Array.isArray(body.scenes) || body.scenes.length === 0) {
-        return Response.json({ error: "Missing or empty required field: scenes" }, { status: 400 });
-      }
-
-      const projectId = body.projectId;
-      const sceneRequests: SceneRenderRequest[] = body.scenes;
-      const compositionWidth = body.compositionWidth || 1920;
-      const compositionHeight = body.compositionHeight || 1080;
-      const applyElasticity = body.applyElasticity !== false;
-
-      // Fetch all project scenes from database
-      const projectScenes = await getProjectScenes(projectId);
-
-      // Build timeline from scene requests
-      const { timelineData, totalDuration } = buildTimelineFromScenes(sceneRequests, projectScenes);
-
-      // Apply elasticity rules if enabled
-      // TODO: Investigate elasticity timing - rules reference original scene scrubber IDs
-      // which may not match after expansion. The elasticity utility handles overlap prevention.
-      if (applyElasticity && projectScenes.length > 0) {
-        console.log("Applying elasticity rules to timeline...");
-        applyElasticityToTimeline(timelineData, projectScenes);
-      }
-
-      // Resolve R2 URLs for render service access (24 hours expiration for long renders)
-      console.log("Resolving R2 URLs for rendering...");
-      const resolvedTimelineData = await resolveR2UrlsInTimeline(
-        userId,
-        timelineData,
-        projectScenes,
-        86400, // 24 hours
-      );
-
-      // Calculate final duration in frames (FPS = 30)
-      const finalDurationInFrames = Math.ceil(totalDuration * 30);
-
-      // Merge all variables from scene requests
-      const mergedVariables: Record<string, string> = {};
-      for (const sceneRequest of sceneRequests) {
-        Object.assign(mergedVariables, sceneRequest.variables);
-      }
-
-      // Create render adapter based on environment
-      const adapter = createRenderAdapter();
-
-      // Start render
-      const result = await adapter.startRender({
-        userId,
-        timelineData: resolvedTimelineData,
-        compositionWidth,
-        compositionHeight,
-        durationInFrames: finalDurationInFrames,
-        scenes: projectScenes,
-        variableValues: mergedVariables,
-      });
-
-      return Response.json({
-        renderId: result.renderId,
-        bucketName: result.bucketName,
-      });
-    } else {
-      // timeline-based render request
-      if (!Array.isArray(body.timelineData)) {
-        return Response.json({ error: "Missing or invalid required field: timelineData" }, { status: 400 });
-      }
-
-      if (typeof body.compositionWidth !== "number") {
-        return Response.json({ error: "Missing or invalid required field: compositionWidth" }, { status: 400 });
-      }
-
-      if (typeof body.compositionHeight !== "number") {
-        return Response.json({ error: "Missing or invalid required field: compositionHeight" }, { status: 400 });
-      }
-
-      if (typeof body.durationInFrames !== "number") {
-        return Response.json({ error: "Missing or invalid required field: durationInFrames" }, { status: 400 });
-      }
-
-      // Resolve R2 URLs for render service access
-      console.log("Resolving R2 URLs for rendering (timeline)...");
-      const resolvedTimelineData = await resolveR2UrlsInTimeline(
-        userId,
-        body.timelineData,
-        [], // No scenes for requests
-        86400, // 24 hours
-      );
-
-      // Extract render input from request body
-      const renderInput: RenderInput = {
-        userId,
-        timelineData: resolvedTimelineData,
-        compositionWidth: body.compositionWidth,
-        compositionHeight: body.compositionHeight,
-        durationInFrames: body.durationInFrames,
-      };
-
-      // Create render adapter
-      const adapter = createRenderAdapter();
-
-      // Start render (validation happens in the adapter)
-      const result = await adapter.startRender(renderInput);
-
-      return Response.json({
-        renderId: result.renderId,
-        bucketName: result.bucketName,
-      });
+    // timeline-based render request
+    if (!Array.isArray(body.timelineData)) {
+      return Response.json({ error: "Missing or invalid required field: timelineData" }, { status: 400 });
     }
+
+    if (typeof body.compositionWidth !== "number") {
+      return Response.json({ error: "Missing or invalid required field: compositionWidth" }, { status: 400 });
+    }
+
+    if (typeof body.compositionHeight !== "number") {
+      return Response.json({ error: "Missing or invalid required field: compositionHeight" }, { status: 400 });
+    }
+
+    if (typeof body.durationInFrames !== "number") {
+      return Response.json({ error: "Missing or invalid required field: durationInFrames" }, { status: 400 });
+    }
+
+    // Fetch scenes if projectId is provided (for hydration of scene scrubbers)
+    let scenes = [];
+    if (body.projectId && typeof body.projectId === "string") {
+      scenes = await getProjectScenes(body.projectId);
+    } else if (Array.isArray(body.scenes)) {
+      scenes = body.scenes;
+    }
+
+    // Resolve R2 URLs for render service access
+    console.log("Resolving R2 URLs for rendering (timeline)...");
+    const resolvedTimelineData = await resolveR2UrlsInTimeline(
+      userId,
+      body.timelineData,
+      scenes, // Pass actual scenes for nested resolution
+      86400, // 24 hours
+    );
+
+    // Extract render input from request body
+    const renderInput: RenderInput = {
+      userId,
+      timelineData: resolvedTimelineData,
+      compositionWidth: body.compositionWidth,
+      compositionHeight: body.compositionHeight,
+      durationInFrames: body.durationInFrames,
+      scenes, // Pass scenes to render adapter so VideoPlayer can find them
+    };
+
+    // Create render adapter
+    const adapter = createRenderAdapter();
+
+    // Start render (validation happens in the adapter)
+    const result = await adapter.startRender(renderInput);
+
+    return Response.json({
+      renderId: result.renderId,
+      bucketName: result.bucketName,
+    });
+
   } catch (error) {
     console.error("Error starting render:", error);
 

@@ -42,62 +42,54 @@ export async function action({ request }: ActionFunctionArgs) {
     const adapter = createRenderAdapter();
 
     // Support both Scene-based and Legacy Timeline-based
-    if (body.projectId && body.scenes) {
-      // Scene-based render request
-      if (typeof body.projectId !== "string") return Response.json({ error: "Missing projectId" }, { status: 400 });
-      if (!Array.isArray(body.scenes) || body.scenes.length === 0)
-        return Response.json({ error: "Missing scenes" }, { status: 400 });
-
-      const projectId = body.projectId;
-      const sceneRequests: SceneRenderRequest[] = body.scenes;
-      const compositionWidth = body.compositionWidth || 1920;
-      const compositionHeight = body.compositionHeight || 1080;
-      const applyElasticity = body.applyElasticity !== false;
-
-      const projectScenes = await getProjectScenes(projectId);
-      const { timelineData, totalDuration } = buildTimelineFromScenes(sceneRequests, projectScenes);
-
-      if (applyElasticity && projectScenes.length > 0) {
-        applyElasticityToTimeline(timelineData, projectScenes);
-      }
-
-      const resolvedTimelineData = await resolveR2UrlsInTimeline(userId, timelineData, projectScenes, 86400);
-      const finalDurationInFrames = Math.ceil(totalDuration * 30);
-
-      const mergedVariables: Record<string, string> = {};
-      for (const sceneRequest of sceneRequests) {
-        Object.assign(mergedVariables, sceneRequest.variables);
-      }
-
-      const renderInput: RenderInput = {
-        userId,
-        timelineData: resolvedTimelineData,
-
-        compositionWidth: body.compositionWidth,
-        compositionHeight: body.compositionHeight,
-        durationInFrames: body.durationInFrames,
-      };
-
-      const result = await adapter.startRender(renderInput);
-
-      return Response.json({ renderId: result.renderId, bucketName: result.bucketName });
-    } else if (body.timelineData) {
-      // Legacy Timeline-based render request
-      const renderInput: RenderInput = {
-        userId,
-        timelineData: body.timelineData,
-        compositionWidth: body.compositionWidth || 1920,
-        compositionHeight: body.compositionHeight || 1080,
-        durationInFrames: body.durationInFrames || 300,
-        variableValues: body.variableValues,
-      };
-
-      const result = await adapter.startRender(renderInput);
-
-      return Response.json({ renderId: result.renderId, bucketName: result.bucketName });
-    } else {
-      return Response.json({ error: "Invalid request: Missing projectId/scenes OR timelineData" }, { status: 400 });
+    if (!body.projectId || !body.scenes) {
+      return Response.json({ error: "Invalid request: Missing projectId/scenes" }, { status: 400 });
     }
+
+    // Scene-based render request
+    if (typeof body.projectId !== "string") return Response.json({ error: "Missing projectId" }, { status: 400 });
+    if (!Array.isArray(body.scenes) || body.scenes.length === 0)
+      return Response.json({ error: "Missing scenes" }, { status: 400 });
+
+    const projectId = body.projectId;
+    const sceneRequests: SceneRenderRequest[] = body.scenes;
+    const compositionWidth = body.compositionWidth || 1920;
+    const compositionHeight = body.compositionHeight || 1080;
+    const applyElasticity = body.applyElasticity !== false;
+
+    console.log(`[Render] Scene-based request: projectId=${projectId}, sceneRequests=${sceneRequests.length}`);
+    const projectScenes = await getProjectScenes(projectId);
+    console.log(`[Render] Fetched ${projectScenes.length} project scenes for projectId: ${projectId}`);
+
+    const { timelineData, totalDuration } = buildTimelineFromScenes(sceneRequests, projectScenes);
+
+    if (applyElasticity && projectScenes.length > 0) {
+      applyElasticityToTimeline(timelineData, projectScenes);
+    }
+
+    console.log(`[Render] Resolving R2 URLs with ${projectScenes.length} project scenes context`);
+    const resolvedTimelineData = await resolveR2UrlsInTimeline(userId, timelineData, projectScenes, 86400);
+    
+    // Merge all variables from scene requests
+    const mergedVariables: Record<string, string> = {};
+    for (const sceneRequest of sceneRequests) {
+      Object.assign(mergedVariables, sceneRequest.variables);
+    }
+
+    const renderInput: RenderInput = {
+      userId,
+      timelineData: resolvedTimelineData,
+      compositionWidth: compositionWidth,
+      compositionHeight:compositionHeight,
+      durationInFrames: body.durationInFrames || totalDuration * 30,
+      scenes: projectScenes,
+      variableValues: mergedVariables,
+    };
+
+    console.log(`[Render] Starting render with input: duration=${body.durationInFrames || totalDuration * 30}`);
+    const result = await adapter.startRender(renderInput);
+
+    return Response.json({ renderId: result.renderId, bucketName: result.bucketName });
   } catch (error) {
     console.error("Error starting render:", error);
     const errorMessage = error instanceof Error ? error.message : "Failed to start render";
