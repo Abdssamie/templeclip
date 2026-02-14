@@ -14,6 +14,10 @@ export default function RenderComposition() {
       height={inputProps.compositionHeight as number}
       defaultProps={{
         // idek why this is forced. We can't pass defaultprops to the composition anyways🤷
+        videoDimensions: {
+          width: inputProps.compositionWidth as number,
+          height: inputProps.compositionHeight as number,
+        },
         timelineData: [
           {
             scrubbers: [
@@ -53,9 +57,9 @@ export default function RenderComposition() {
         ],
         isRendering: false,
         selectedItem: null,
-        setSelectedItem: () => { },
+        setSelectedItem: () => {},
         timeline: { tracks: [] },
-        handleUpdateScrubber: () => { },
+        handleUpdateScrubber: () => {},
         getPixelsPerSecond: () => 100,
       }}
     />

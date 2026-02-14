@@ -31,6 +31,7 @@ type TimelineCompositionProps = {
   getPixelsPerSecond: number | (() => number);
   variableValues?: Record<string, string>;
   scenes?: Scene[];
+  videoDimensions?: { width: number; height: number };
 };
 
 // props for the preview mode player
@@ -123,6 +124,7 @@ export function TimelineComposition({
   getPixelsPerSecond,
   variableValues,
   scenes = [],
+  videoDimensions = { width: 1920, height: 1080 },
 }: TimelineCompositionProps) {
   // Resolve pixels per second based on rendering mode
   const resolvedPixelsPerSecond = typeof getPixelsPerSecond === "function" ? getPixelsPerSecond() : getPixelsPerSecond;
@@ -352,7 +354,13 @@ export function TimelineComposition({
       case "flip":
         return flip();
       case "iris":
-        return iris({ width: 1000, height: 1000 });
+        return iris({ width: videoDimensions.width, height: videoDimensions.height });
+      case "clockWipe":
+        return clockWipe({
+          width: videoDimensions.width,
+          height: videoDimensions.height,
+          innerEnterStyle: { WebkitBorderRadius: "50%" },
+        });
     }
   };
 
