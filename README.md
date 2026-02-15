@@ -109,11 +109,9 @@ R2_ACCESS_KEY_ID=your_r2_access_key
 R2_SECRET_ACCESS_KEY=your_r2_secret_key
 R2_BUCKET_NAME=your_bucket_name
 
-# AI Features (Optional)
-GEMINI_API_KEY=your_gemini_api_key
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 - **Frontend**: React Router v7 (SSR)
 - **Backend**: Node.js + Express
@@ -123,15 +121,12 @@ GEMINI_API_KEY=your_gemini_api_key
 - **Storage**: Cloudflare R2
 - **Auth**: Better Auth (Google OAuth)
 
-## 📝 Known Issues
+## Known Issues
 
-- Complex codebase with mixed concerns
-- Schema validation issues with optional fields
-- Environment detection problems in production
 - Docker networking requires manual configuration for some platforms
 - No comprehensive test coverage
 
-## 🔄 Alternatives
+## Alternatives
 
 If you're looking for a simpler solution:
 
@@ -139,15 +134,15 @@ If you're looking for a simpler solution:
 - **Remotion Lambda** - Serverless rendering at scale
 - **Commercial tools** - Canva, CapCut for non-technical users
 
-## ❤️ Contribution
+## Contribution
 
 Contributcome, but please note this project is in maintenance mode. Major refactoring would be needed for production use.
 
-## 📜 License
+## License
 
 This project is licensed under a dual-license. Refer to [LICENSE](LICENSE.md) for details. The [Remotion license](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md) also applies to the relevant parts of the project.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with:
 
