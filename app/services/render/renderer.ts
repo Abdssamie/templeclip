@@ -60,6 +60,20 @@ export async function executeRender(
     inputProps,
   });
 
+  console.log(
+    `[Renderer] About to render with inputProps:`,
+    JSON.stringify(
+      {
+        hasVariableValues: !!inputProps.variableValues,
+        variableValuesKeys: inputProps.variableValues ? Object.keys(inputProps.variableValues) : [],
+        hasScenes: !!inputProps.scenes,
+        scenesCount: inputProps.scenes?.length || 0,
+      },
+      null,
+      2,
+    ),
+  );
+
   const { buffer } = await renderMedia({
     composition,
     serveUrl: bundled,
