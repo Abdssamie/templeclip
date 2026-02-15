@@ -221,8 +221,13 @@ export function TimelineComposition({
         );
         break;
       case "image": {
-        const rawUrl = scrubber.mediaUrlRemote || scrubber.mediaUrlLocal;
+        const shouldUseLocal = scrubber.mediaUrlLocal && !scrubber.assetId;
+        const rawUrl = scrubber.mediaUrlRemote || (shouldUseLocal ? scrubber.mediaUrlLocal : null);
         const imageUrl = resolveVariable(rawUrl, scrubber.variableName);
+        if (!imageUrl) {
+          console.warn(`[VideoPlayer] Image scrubber ${scrubber.id} has no valid URL`);
+          return <MediaMissingFallback />;
+        }
         content = (
           <AbsoluteFill
             style={{
@@ -231,14 +236,19 @@ export function TimelineComposition({
               width: scrubber.width_player,
               height: scrubber.height_player,
             }}>
-            <SafeImg src={imageUrl!} />
+            <SafeImg src={imageUrl} />
           </AbsoluteFill>
         );
         break;
       }
       case "video": {
-        const rawUrl = scrubber.mediaUrlRemote || scrubber.mediaUrlLocal;
+        const shouldUseLocal = scrubber.mediaUrlLocal && !scrubber.assetId;
+        const rawUrl = scrubber.mediaUrlRemote || (shouldUseLocal ? scrubber.mediaUrlLocal : null);
         const videoUrl = resolveVariable(rawUrl, scrubber.variableName);
+        if (!videoUrl) {
+          console.warn(`[VideoPlayer] Video scrubber ${scrubber.id} has no valid URL`);
+          return <MediaMissingFallback />;
+        }
         content = (
           <AbsoluteFill
             style={{
@@ -248,7 +258,7 @@ export function TimelineComposition({
               height: scrubber.height_player,
             }}>
             <SafeVideo
-              src={videoUrl!}
+              src={videoUrl}
               trimBefore={scrubber.trimBefore || undefined}
               trimAfter={scrubber.trimAfter || undefined}
             />
@@ -257,8 +267,13 @@ export function TimelineComposition({
         break;
       }
       case "audio": {
-        const rawUrl = scrubber.mediaUrlRemote || scrubber.mediaUrlLocal;
+        const shouldUseLocal = scrubber.mediaUrlLocal && !scrubber.assetId;
+        const rawUrl = scrubber.mediaUrlRemote || (shouldUseLocal ? scrubber.mediaUrlLocal : null);
         const audioUrl = resolveVariable(rawUrl, scrubber.variableName);
+        if (!audioUrl) {
+          console.warn(`[VideoPlayer] Audio scrubber ${scrubber.id} has no valid URL`);
+          return null;
+        }
         content = (
           <AbsoluteFill
             style={{
@@ -268,7 +283,7 @@ export function TimelineComposition({
               height: scrubber.height_player,
             }}>
             <SafeAudio
-              src={audioUrl!}
+              src={audioUrl}
               trimBefore={scrubber.trimBefore || undefined}
               trimAfter={scrubber.trimAfter || undefined}
             />

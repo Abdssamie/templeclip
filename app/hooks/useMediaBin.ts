@@ -328,6 +328,13 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
 
         console.log("Upload successful to R2");
 
+        const newMediaUrlRemote = apiUrl(`/api/assets/${assetId}/raw`, false, true);
+
+        // Revoke the blob URL since we now have a remote URL
+        if (mediaUrlLocal && mediaUrlLocal.startsWith("blob:")) {
+          URL.revokeObjectURL(mediaUrlLocal);
+        }
+
         // Update item with R2 data
         setMediaBinItems((prev) =>
           prev.map((item) =>
@@ -338,6 +345,8 @@ export const useMediaBin = (handleDeleteScrubbersByMediaBinId: (mediaBinId: stri
                   assetId,
                   r2Key,
                   publicUrl: `/r2/${r2Key}`,
+                  mediaUrlRemote: newMediaUrlRemote,
+                  mediaUrlLocal: null, // Clear blob URL since we have remote URL
                   isUploading: false,
                   uploadProgress: null,
                 }

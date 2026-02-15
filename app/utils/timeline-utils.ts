@@ -43,6 +43,7 @@ export const transformTimelineToData = (timeline: TimelineState, pixelsPerSecond
         sceneId: scrubber.sceneId || "",
         variables: scrubber.variables || {},
         sceneName: scrubber.sceneName,
+        assetId: scrubber.assetId,
       });
     }
   }

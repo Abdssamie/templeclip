@@ -104,9 +104,26 @@ export async function resolveR2UrlsInTimeline(
   const resolveScrubber = async (scrubber: ResolvableScrubber) => {
     const resolved = { ...scrubber };
 
-    // Resolve direct media URLs
-    if (scrubber.mediaUrlRemote) {
-      resolved.mediaUrlRemote = await resolveMediaUrl(scrubber.mediaUrlRemote, userId, expiresIn, urlCache);
+    // Resolve media URLs (prioritize assetId if available)
+    if (scrubber.assetId) {
+      const assetId = scrubber.assetId;
+      try {
+        const asset = await getAssetById(assetId);
+        if (asset && asset.r2_key) {
+          const presignedUrl = await getPresignedDownloadUrl(asset.r2_key, expiresIn);
+          resolved.mediaUrlRemote = presignedUrl;
+          resolved.mediaUrlLocal = presignedUrl; // Force local URL to match remote for renderer
+          urlCache.set(assetId, presignedUrl);
+        }
+      } catch (e) {
+        console.error(`Failed to resolve asset ${assetId}`, e);
+      }
+    } else if (scrubber.mediaUrlRemote) {
+      const resolvedUrl = await resolveMediaUrl(scrubber.mediaUrlRemote, userId, expiresIn, urlCache);
+      if (resolvedUrl) {
+        resolved.mediaUrlRemote = resolvedUrl;
+        resolved.mediaUrlLocal = resolvedUrl; // Force local URL to match remote for renderer
+      }
     }
 
     // Handle grouped scrubbers recursively
@@ -184,9 +201,25 @@ export async function resolveR2UrlsInScenes(
   const resolveScrubberState = async (scrubber: ScrubberState): Promise<ScrubberState> => {
     const resolved = { ...scrubber };
 
-    // Resolve direct media URLs
-    if (scrubber.mediaUrlRemote) {
-      resolved.mediaUrlRemote = await resolveMediaUrl(scrubber.mediaUrlRemote, userId, expiresIn, urlCache);
+    // Resolve media URLs (prioritize assetId if available)
+    if (scrubber.assetId) {
+      try {
+        const asset = await getAssetById(scrubber.assetId);
+        if (asset && asset.r2_key) {
+          const presignedUrl = await getPresignedDownloadUrl(asset.r2_key, expiresIn);
+          resolved.mediaUrlRemote = presignedUrl;
+          resolved.mediaUrlLocal = presignedUrl; // Force local URL to match remote for renderer
+          urlCache.set(scrubber.assetId, presignedUrl);
+        }
+      } catch (e) {
+        console.error(`Failed to resolve asset ${scrubber.assetId}`, e);
+      }
+    } else if (scrubber.mediaUrlRemote) {
+      const resolvedUrl = await resolveMediaUrl(scrubber.mediaUrlRemote, userId, expiresIn, urlCache);
+      if (resolvedUrl) {
+        resolved.mediaUrlRemote = resolvedUrl;
+        resolved.mediaUrlLocal = resolvedUrl; // Force local URL to match remote for renderer
+      }
     }
 
     // Handle grouped scrubbers recursively

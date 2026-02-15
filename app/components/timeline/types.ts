@@ -6,6 +6,7 @@ export interface BaseScrubber {
   mediaUrlRemote: string | null;
   media_width: number; // width of the media in pixels
   media_height: number; // height of the media in pixels
+  assetId?: string | null; // ID of the asset in the database
 
   // R2 storage (optional - only used for Remotion Lambda rendering with CSV imports)
   r2Key?: string | null; // R2 object key (e.g., "userId/assetId/filename.mp4")
@@ -46,7 +47,7 @@ export interface TextProperties {
 export interface MediaBinItem extends BaseScrubber {
   name: string;
   durationInSeconds: number; // For media, to calculate initial width
-  assetId?: string | null; 
+  assetId?: string | null;
 
   // Upload tracking properties
   uploadProgress: number | null; // 0-100, null when upload complete

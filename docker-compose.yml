@@ -31,6 +31,10 @@ services:
       # API
       API_KEY_SECRET: ${API_KEY_SECRET}
 
+      # Render service
+      RENDER_SERVER_URL: http://render:8080
+      RENDER_API_TOKEN: ${RENDER_API_TOKEN}
+
       # App config
       NODE_ENV: production
       HOST: 0.0.0.0
@@ -40,6 +44,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      render:
+        condition: service_started
     networks:
       - kimu-network
 
