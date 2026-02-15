@@ -11,11 +11,17 @@ const safeEnv = (key: string, fallback?: string): string | undefined => {
 export const getApiBaseUrl = (fastapi: boolean = false, betterauth: boolean = false): string => {
   const nodeEnv = safeEnv("NODE_ENV", "development");
   const isProduction = nodeEnv === "production";
-  const prodDomainHost = safeEnv("PROD_DOMAIN", "trykimu.com") as string;
 
-  // Handle localhost development case
-  const protocol = prodDomainHost.includes("localhost") ? "http" : "https";
-  const prodDomain = `${protocol}://${prodDomainHost}`;
+  // In browser, use window.location.origin for production
+  const isBrowser = typeof window !== "undefined";
+  const prodDomain =
+    isBrowser && isProduction
+      ? window.location.origin
+      : (() => {
+          const prodDomainHost = safeEnv("PROD_DOMAIN", "trykimu.com") as string;
+          const protocol = prodDomainHost.includes("localhost") ? "http" : "https";
+          return `${protocol}://${prodDomainHost}`;
+        })();
 
   if (betterauth) {
     return isProduction ? prodDomain : "http://localhost:5173"; // frontend  NOTE: this will be deleted, it is repeating logic. It'll be the default.
