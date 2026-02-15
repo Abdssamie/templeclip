@@ -76,6 +76,8 @@ export async function action({ request }: ActionFunctionArgs) {
       Object.assign(mergedVariables, sceneRequest.variables);
     }
 
+    console.log(`[Render API] Merged variables:`, JSON.stringify(mergedVariables, null, 2));
+
     const renderInput: RenderInput = {
       userId,
       timelineData: resolvedTimelineData,
@@ -86,7 +88,10 @@ export async function action({ request }: ActionFunctionArgs) {
       variableValues: mergedVariables,
     };
 
-    console.log(`[Render] Starting render with input: duration=${body.durationInFrames || totalDuration * 30}`);
+    console.log(
+      `[Render API] Starting render with variableValues:`,
+      JSON.stringify(renderInput.variableValues, null, 2),
+    );
     const result = await adapter.startRender(renderInput);
 
     return Response.json({ renderId: result.renderId, bucketName: result.bucketName });

@@ -16,6 +16,8 @@ export async function executeRender(
 ): Promise<string> {
   const { timelineData, width, height, durationInSeconds, scenes, variableValues } = data;
 
+  console.log(`[Renderer] Received variableValues:`, JSON.stringify(variableValues, null, 2));
+
   const bundled = await bundle({
     entryPoint: path.resolve(__dirname, "../../videorender/index.ts"),
     // If you have a webpack override in remotion.config.ts, pass it here as well.
@@ -44,7 +46,12 @@ export async function executeRender(
     scenes,
     variableValues,
   };
-  
+
+  console.log(
+    `[Renderer] Passing inputProps to composition with variableValues:`,
+    JSON.stringify(inputProps.variableValues, null, 2),
+  );
+
   // TODO: Fix assets urls resolving issues inside docker renderer
 
   const composition = await selectComposition({

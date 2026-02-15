@@ -99,6 +99,11 @@ export class DockerRenderAdapter implements RenderAdapter {
         variableValues: input.variableValues,
       };
 
+      console.log(
+        `[DockerAdapter] Sending variableValues to render service:`,
+        JSON.stringify(requestBody.variableValues, null, 2),
+      );
+
       const response = await fetch(`${this.baseUrl}/render`, {
         method: "POST",
         headers: this.getHeaders(),
