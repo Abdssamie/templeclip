@@ -1,63 +1,40 @@
 <br />
 
 <p align="center">
-  <img width="3200" height="804" alt="image" src="https://github.com/user-attachments/assets/08149933-609a-4556-8ab4-4ef2622a9c8f" />
-
+  <img width="300" height="300" alt="TempleClip Logo" src="./public/templeclip-logo.png" />
 </p>
-<p align="center">A friendly AI powered open-source alternative to Capcut, Canva.<br><samp>
-<a href="https://discord.gg/24Mt5DGcbx"> Discord</a> &nbsp; <a href="https://x.com/trykimu"> Twitter</a> &nbsp; <a href="https://trykimu.com"> Website</a></p>
-</samp>
 
-## ✨Features
+<p align="center">
+  <strong>TempleClip</strong> - Template-based video creation with variable substitution
+</p>
 
-<table>
-  <tr>
-    <td>
-      <img src="https://github.com/user-attachments/assets/c504e379-110d-4286-b2b7-7676aa186112" />
-      <h2 align="center">Advanced Multi‑Track Editing</h2>
-      <p align="center">Edit across unlimited tracks with precise control, snapping, and effortless layer management.</p>
-      <br>
-    </td>
-    <td>
-      <img width="1600" height="1000" alt="image" src="https://github.com/user-attachments/assets/94f05873-2f52-46ad-831a-55936f7999da" />
-      <h2 align="center">Real‑Time Preview</h2>
-      <p align="center">See every change instantly with low‑latency playback—no waiting, no rendering.</p>
-      <br>
-    </td>
-    <td>
-      <img src="https://github.com/user-attachments/assets/3f464355-d290-4586-aead-f9a1a3c58d63" />
-      <h2 align="center">Fast Export</h2>
-      <p align="center">Render high‑quality videos quickly and export exactly where you need them.</p>
-      <br>
-    </td>
-    </tr>
-    <tr>
-      <td>
-        <img src="https://github.com/user-attachments/assets/32920f51-4faf-442f-92fc-50d4809cd290" /><h2 align="center">Vibe AI Assistant</h2>
-        <p align="center">Describe your idea and let Kimu generate edits, timing, and layouts automatically.</p>
-        <br>
-      </td>
-    <td>
-      <img src="https://github.com/user-attachments/assets/0527e006-8438-466e-83ef-b05d7f98604b" />
-      <h2 align="center">Smart Media Library</h2>
-      <p align="center">Organize by type, tags, and sentiment—search and filter your assets in seconds.</p>
-      <br>
-    </td>
-    <td>
-      <img src="https://github.com/user-attachments/assets/dae66fb2-3e53-46ce-8fe0-10e62ac3cf70" />
-      <h2 align="center">Cloud‑Synced Projects</h2>
-      <p align="center">Keep timelines and assets in sync across devices so you can pick up right where you left off.</p>
-      <br>
-    </td>
-  </tr>
-</table>
-<p align="center">transitions, offline datastore, OAuth based security, change control
-<br> and much more...</p>
-</samp>
+<p align="center">
+  <samp>
+    Create videos from code templates powered by Remotion
+  </samp>
+</p>
+
+## 🎯 What is TempleClip?
+
+TempleClip is a template-based video editor that lets you create reusable video compositions with variable substitution. Built on Remotion, it provides a visual timeline editor for creating templates that can be rendered with different content.
+
+## ⚠️ Project Status
+
+**This project is in maintenance mode.** It was built as a learning exercise and proof-of-concept. The codebase has significant technical debt and architectural issues. For production use, consider using Remotion directly with code-based templates.
+
+## ✨ Features
+
+- **Visual Timeline Editor** - Multi-track editing with drag-and-drop
+- **Template Variables** - Create reusable compositions with dynamic content
+- **Media Library** - Organize videos, images, and audio files
+- **Cloud Storage** - R2 integration for asset management
+- **Authentication** - Google OAuth via Better Auth
+- **Real-time Preview** - See changes as you edit
+- **Export** - Render videos with Remotion
 
 ## 💻 Development
 
-<strong> 🐳 <ins>Docker</ins> <code>Recommended</code> </strong>
+### 🐳 Docker (Recommended)
 
 **Quick Start:**
 
@@ -68,18 +45,11 @@ docker compose -f docker-compose.yml \
 
 **Ports:**
 
-<samp>
-  
 - Frontend: `5173`
-- Backend : `8000`
-- FastAPI : `3000`
+- Backend: `8000`
+- FastAPI: `3000`
 
-</samp>
-<br>
-
-<strong> 🛠️ <ins>Local Development</ins></strong>
-
-<samp>For local development without Docker:</samp>
+### 🛠️ Local Development
 
 ```bash
 # Install dependencies
@@ -89,25 +59,19 @@ pnpm install
 pnpm run dev                                    # Frontend (port 5173)
 pnpm dlx tsx app/videorender/videorender.ts     # Backend (port 8000)
 uv run backend/main.py                          # FastAPI (port 3000)
-
-# Note: You'll need GEMINI_API_KEY for AI features
 ```
 
-`Requirements`
+**Requirements:**
 
-<samp>
-  
 - Node.js 20+
 - Python 3.9+
 - PostgreSQL
+- Redis
 - pnpm
 
-</samp>
-</details>
+## 🚀 Production Deployment
 
-## 🚀 Production
-
-**Quick Start:**
+**Docker Compose:**
 
 ```bash
 docker compose up -d
@@ -119,8 +83,6 @@ docker compose up -d
 PROD_DOMAIN=yourdomain.com docker compose up -d
 ```
 
-or alternatively edit `docker-compose.yml`
-
 **Ports:**
 
 - HTTP: `80`
@@ -128,41 +90,68 @@ or alternatively edit `docker-compose.yml`
 
 ## ⚙️ Environment Configuration
 
-Create a `.env` file for custom settings:
+Create a `.env` file:
 
 ```env
 # Domain Configuration
 PROD_DOMAIN=yourdomain.com
 
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/videoeditor
+DATABASE_URL=postgresql://user:pass@localhost:5432/templeclip_db
 
 # Authentication (Google OAuth)
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# AI Features (Optional -> /backend)
-GEMINI_API_KEY=your_gemini_api_key
+# Cloudflare R2 Storage
+R2_ACCOUNT_ID=your_r2_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key
+R2_SECRET_ACCESS_KEY=your_r2_secret_key
+R2_BUCKET_NAME=your_bucket_name
 
-# Supabase (Optional)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_key
+# AI Features (Optional)
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-**Environment Variables Explained:**
+## 🏗️ Architecture
 
-- `PROD_DOMAIN`: Your production domain (host only, e.g., `yourdomain.com`)
-- `DATABASE_URL`: PostgreSQL connection string
-- `GOOGLE_CLIENT_ID/SECRET`: Google OAuth credentials for authentication
-- `GEMINI_API_KEY`: Required for AI-powered video editing features
-- `VITE_SUPABASE_*`: Optional Supabase integration for additional features
+- **Frontend**: React Router v7 (SSR)
+- **Backend**: Node.js + Express
+- **Rendering**: Remotion
+- **Database**: PostgreSQL
+- **Cache**: Redis
+- **Storage**: Cloudflare R2
+- **Auth**: Better Auth (Google OAuth)
 
-<br>
+## 📝 Known Issues
 
-## ❤️Contribution
+- Complex codebase with mixed concerns
+- Schema validation issues with optional fields
+- Environment detection problems in production
+- Docker networking requires manual configuration for some platforms
+- No comprehensive test coverage
 
-<samp> We would love your contributions! ❤️ Check the [contribution guide](CONTRIBUTING.md). </samp>
+## 🔄 Alternatives
 
-## 📜License
+If you're looking for a simpler solution:
 
-<samp> This project is licensed under a dual-license. Refer to [LICENSE](LICENSE.md) for details. The [Remotion license](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md) also applies to the relevant parts of the project. </samp>
+- **Remotion CLI** - Write templates as React components, render via CLI
+- **Remotion Lambda** - Serverless rendering at scale
+- **Commercial tools** - Canva, CapCut for non-technical users
+
+## ❤️ Contribution
+
+Contributcome, but please note this project is in maintenance mode. Major refactoring would be needed for production use.
+
+## 📜 License
+
+This project is licensed under a dual-license. Refer to [LICENSE](LICENSE.md) for details. The [Remotion license](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md) also applies to the relevant parts of the project.
+
+## 🙏 Acknowledgments
+
+Built with:
+
+- [Remotion](https://remotion.dev) - Video rendering engine
+- [React Router](https://reactrouter.com) - SSR framework
+- [Better Auth](https://better-auth.com) - Authentication
+- [Cloudflare R2](https://cloudflare.com/r2) - Object storage
