@@ -14,6 +14,7 @@ create table if not exists assets (
 
 -- Ensure columns for evolving installs
 alter table assets add column if not exists project_id text null;
+alter table assets add column if not exists storage_key text null;
 
 -- Ensure user_id has type text (for older installs)
 do $$
