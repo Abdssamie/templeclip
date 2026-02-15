@@ -66,8 +66,10 @@ export const TrackStateSchema = z.object({
 export const TemplateVariableSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.enum(["text", "image", "video", "audio"]),
+  mediaType: z.enum(["text", "image", "video", "audio", "groupped_scrubber"]),
+  scrubberId: z.string(),
   defaultValue: z.string().optional(),
+  required: z.boolean().optional(),
 });
 
 export const TimelineStateSchema = z.object({
@@ -76,9 +78,12 @@ export const TimelineStateSchema = z.object({
 });
 
 export const SceneVariableSchemaZod = z.object({
+  id: z.string(),
   name: z.string().min(1),
-  type: z.enum(["text", "image", "video", "audio"]),
-  required: z.boolean(),
+  mediaType: z.enum(["text", "image", "video", "audio", "groupped_scrubber"]),
+  scrubberId: z.string(),
+  defaultValue: z.string().optional(),
+  required: z.boolean().optional(),
 });
 
 export const ElasticityRuleSchema = z.object({

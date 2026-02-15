@@ -20,6 +20,9 @@ import {
   Clapperboard,
   ChevronRight,
   Pencil,
+  Code,
+  Copy,
+  CheckCheck,
 } from "lucide-react";
 import { KimuLogo } from "~/components/ui/KimuLogo";
 import {
@@ -53,6 +56,7 @@ const ProjectHoverEffect = ({
   onProjectClick,
   onRename,
   onDelete,
+  onApiInfo,
   formatDate,
   formatTime,
 }: {
@@ -60,6 +64,7 @@ const ProjectHoverEffect = ({
   onProjectClick: (projectId: string) => void;
   onRename: (projectId: string, currentName: string) => void;
   onDelete: (projectId: string) => void;
+  onApiInfo: (projectId: string) => void;
   formatDate: (dateString: string) => string;
   formatTime: (dateString: string) => string;
 }) => {
@@ -95,6 +100,7 @@ const ProjectHoverEffect = ({
             onProjectClick={onProjectClick}
             onRename={onRename}
             onDelete={onDelete}
+            onApiInfo={onApiInfo}
             formatDate={formatDate}
             formatTime={formatTime}
           />
@@ -109,6 +115,7 @@ const ProjectCard = ({
   onProjectClick,
   onRename,
   onDelete,
+  onApiInfo,
   formatDate,
   formatTime,
 }: {
@@ -116,6 +123,7 @@ const ProjectCard = ({
   onProjectClick: (projectId: string) => void;
   onRename: (projectId: string, currentName: string) => void;
   onDelete: (projectId: string) => void;
+  onApiInfo: (projectId: string) => void;
   formatDate: (dateString: string) => string;
   formatTime: (dateString: string) => string;
 }) => {
@@ -147,7 +155,16 @@ const ProjectCard = ({
         </div>
 
         {/* Actions: always visible on mobile, show on hover for desktop */}
-        <div className="absolute bottom-0.5 right-0.5 transition-opacity duration-300 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+        <div className="absolute bottom-0.5 right-0.5 transition-opacity duration-300 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex gap-0.5">
+          <button
+            className="p-1.5 text-muted-foreground hover:text-foreground transition-colors duration-200"
+            onClick={(e) => {
+              e.stopPropagation();
+              onApiInfo(project.id);
+            }}
+            aria-label="View API info">
+            <Code className="h-4 w-4" />
+          </button>
           <button
             className="p-1.5 text-muted-foreground hover:text-foreground transition-colors duration-200"
             onClick={(e) => {
@@ -195,6 +212,18 @@ export default function Projects() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerDirection, setDrawerDirection] = useState<"right" | "bottom">("right");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [apiInfoProjectId, setApiInfoProjectId] = useState<string | null>(null);
+  const [apiModalOpen, setApiModalOpen] = useState(false);
+  const [projectScenes, setProjectScenes] = useState<
+    {
+      id: string;
+      name: string;
+      description?: string;
+      variableSchema: { id: string; name: string; mediaType: string; defaultValue?: string; required?: boolean }[];
+    }[]
+  >([]);
+  const [apiModalLoading, setApiModalLoading] = useState(false);
+  const [copiedCurl, setCopiedCurl] = useState(false);
 
   useEffect(() => {
     const update = () => {
@@ -229,8 +258,60 @@ export default function Projects() {
     });
   };
   useEffect(() => {
-    if (!user) return; // loader already gates; avoid client redirect loops
+    if (!user) return;
   }, [user]);
+
+  const openApiInfoModal = async (projectId: string) => {
+    setApiInfoProjectId(projectId);
+    setApiModalOpen(true);
+    setApiModalLoading(true);
+    setProjectScenes([]);
+    try {
+      const res = await fetch(`/api/scenes/${projectId}`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setProjectScenes(data.scenes || []);
+      }
+    } finally {
+      setApiModalLoading(false);
+    }
+  };
+
+  const generateCurlExample = () => {
+    if (!apiInfoProjectId || projectScenes.length === 0) return "";
+
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://your-domain.com";
+
+    const scenesJson = projectScenes.map((scene) => {
+      const vars: Record<string, string> = {};
+      for (const v of scene.variableSchema || []) {
+        vars[v.name] = v.defaultValue || `your_${v.name}`;
+      }
+      return {
+        sceneId: scene.id,
+        variables: Object.keys(vars).length > 0 ? vars : {},
+      };
+    });
+
+    return `curl -X POST '${baseUrl}/api/v1/render' \\
+  -H 'Authorization: Bearer kimu_your_api_key' \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "projectId": "${apiInfoProjectId}",
+    "scenes": ${JSON.stringify(scenesJson, null, 4).split("\n").join("\n    ")}
+  }'`;
+  };
+
+  const copyCurlToClipboard = async () => {
+    const curl = generateCurlExample();
+    try {
+      await navigator.clipboard.writeText(curl);
+      setCopiedCurl(true);
+      setTimeout(() => setCopiedCurl(false), 2000);
+    } catch {
+      console.error("Failed to copy");
+    }
+  };
 
   useEffect(() => {
     const fetchStars = async () => {
@@ -416,6 +497,7 @@ export default function Projects() {
               });
               if (res.ok) setProjects((prev) => prev.filter((x) => x.id !== projectId));
             }}
+            onApiInfo={openApiInfoModal}
             formatDate={formatDate}
             formatTime={formatTime}
           />
@@ -520,6 +602,107 @@ export default function Projects() {
           </ADFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* API Info Modal */}
+      {apiModalOpen && (
+        <div className="fixed inset-0 z-[9998]">
+          <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={() => setApiModalOpen(false)} />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-xl max-h-[85vh] rounded-md border border-border bg-background shadow-xl flex flex-col">
+              <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between shrink-0">
+                <span className="text-sm font-medium">API Render Info</span>
+                <button onClick={() => setApiModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                  ×
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto flex-1">
+                {apiModalLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : projectScenes.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    No scenes found in this project. Create scenes in the editor first.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Use this info to render videos via the API. Get your API key from{" "}
+                      <span className="font-mono">POST /api/keys</span>.
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Scenes</h4>
+                      {projectScenes.map((scene) => (
+                        <div key={scene.id} className="rounded-md border border-border/50 p-3 bg-muted/20">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="font-medium text-sm">{scene.name || "Unnamed Scene"}</div>
+                              {scene.description && (
+                                <div className="text-xs text-muted-foreground mt-0.5">{scene.description}</div>
+                              )}
+                            </div>
+                            <code className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                              {scene.id.slice(0, 8)}...
+                            </code>
+                          </div>
+                          {scene.variableSchema && scene.variableSchema.length > 0 ? (
+                            <div className="mt-2 space-y-1">
+                              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Variables</div>
+                              <div className="grid gap-1">
+                                {scene.variableSchema.map((v) => (
+                                  <div
+                                    key={v.id}
+                                    className="flex items-center gap-2 text-xs bg-background/50 px-2 py-1 rounded">
+                                    <code className="font-mono text-primary">{v.name}</code>
+                                    <span className="text-muted-foreground">({v.mediaType})</span>
+                                    {v.required && (
+                                      <span className="text-[9px] bg-destructive/20 text-destructive px-1 rounded">
+                                        required
+                                      </span>
+                                    )}
+                                    {v.defaultValue && (
+                                      <span className="text-muted-foreground truncate">
+                                        default: {v.defaultValue.slice(0, 30)}
+                                        {v.defaultValue.length > 30 ? "..." : ""}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 text-xs text-muted-foreground">No variables</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-2 pt-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          curl Example
+                        </h4>
+                        <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={copyCurlToClipboard}>
+                          {copiedCurl ? (
+                            <>
+                              <CheckCheck className="h-3 w-3 mr-1" /> Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3 mr-1" /> Copy
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <pre className="text-[10px] font-mono bg-muted/50 border border-border/50 rounded p-3 overflow-x-auto whitespace-pre-wrap break-all">
+                        {generateCurlExample()}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Playful Kimu mascot: gentle float in the corner; spin with chime on click */}
       <style>{`@keyframes kimu-float { 0%{transform:translateY(0)} 50%{transform:translateY(-6px)} 100%{transform:translateY(0)} }
       @keyframes kimu-spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }`}</style>

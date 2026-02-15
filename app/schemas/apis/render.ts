@@ -8,6 +8,7 @@ export const RenderRequestSchema = z.object({
   height: z.number().int().min(240).max(2160).default(1080),
   durationInSeconds: z.number().positive().max(3600, "Video too long (max 1 hour)"),
   outputFormat: z.enum(["mp4", "webm"]).default("mp4"),
+  variableValues: z.record(z.string(), z.string()).optional(),
 });
 
 export type RenderRequest = z.infer<typeof RenderRequestSchema>;

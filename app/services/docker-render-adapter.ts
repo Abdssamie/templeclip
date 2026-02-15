@@ -96,6 +96,7 @@ export class DockerRenderAdapter implements RenderAdapter {
         height: input.compositionHeight,
         durationInSeconds: Math.ceil(input.durationInFrames / 30), // Convert frames to seconds (assuming 30fps)
         outputFormat: "mp4" as const,
+        variableValues: input.variableValues,
       };
 
       const response = await fetch(`${this.baseUrl}/render`, {
