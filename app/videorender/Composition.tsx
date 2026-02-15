@@ -3,7 +3,9 @@ import { TimelineComposition } from "../components/video-compositions/VideoPlaye
 
 export default function RenderComposition() {
   const inputProps = getInputProps();
-  console.log("Input props:", inputProps);
+  console.log("[Composition] Input props:", inputProps);
+  console.log("[Composition] variableValues:", inputProps.variableValues);
+
   return (
     <Composition
       id="TimelineComposition"
@@ -13,12 +15,12 @@ export default function RenderComposition() {
       width={inputProps.compositionWidth as number}
       height={inputProps.compositionHeight as number}
       defaultProps={{
-        // idek why this is forced. We can't pass defaultprops to the composition anyways🤷
+        // Pass all inputProps to the composition
         videoDimensions: {
           width: inputProps.compositionWidth as number,
           height: inputProps.compositionHeight as number,
         },
-        timelineData: [
+        timelineData: (inputProps.timelineData as any) || [
           {
             scrubbers: [
               {
@@ -55,12 +57,14 @@ export default function RenderComposition() {
             transitions: {},
           },
         ],
-        isRendering: false,
+        isRendering: true,
         selectedItem: null,
         setSelectedItem: () => {},
         timeline: { tracks: [] },
         handleUpdateScrubber: () => {},
         getPixelsPerSecond: () => 100,
+        variableValues: (inputProps.variableValues as Record<string, string>) || undefined,
+        scenes: (inputProps.scenes as any) || undefined,
       }}
     />
   );
