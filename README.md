@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>TempleClip</strong> - Template-based video creation with variable substitution
+  <strong>TempleClip</strong> - Template-based video creation
 </p>
 
 <p align="center">
