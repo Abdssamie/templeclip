@@ -287,7 +287,27 @@ export default function Projects() {
     const scenesJson = projectScenes.map((scene) => {
       const vars: Record<string, string> = {};
       for (const v of scene.variableSchema || []) {
-        vars[v.name] = v.defaultValue || `your_${v.name}`;
+        // Provide better example values based on media type
+        if (v.defaultValue) {
+          vars[v.name] = v.defaultValue;
+        } else {
+          switch (v.mediaType) {
+            case "text":
+              vars[v.name] = "Your text here";
+              break;
+            case "image":
+              vars[v.name] = "https://example.com/image.jpg";
+              break;
+            case "video":
+              vars[v.name] = "https://example.com/video.mp4";
+              break;
+            case "audio":
+              vars[v.name] = "https://example.com/audio.mp3";
+              break;
+            default:
+              vars[v.name] = `your_${v.name}`;
+          }
+        }
       }
       return {
         sceneId: scene.id,

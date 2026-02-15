@@ -5,7 +5,7 @@ export const CONFIG = {
   RENDER_TIMEOUT_MS: 30 * 60 * 1000,
   RATE_LIMIT: {
     WINDOW_MS: 60 * 60 * 1000,
-    MAX_REQUESTS: 10,
+    MAX_REQUESTS: 1000,
   },
   QUEUE: {
     NAME: "video-render",
@@ -17,7 +17,7 @@ export const CONFIG = {
   },
   WORKER: {
     CONCURRENCY: 3,
-    RATE_LIMIT_MAX: 10,
+    RATE_LIMIT_MAX: 60,
     RATE_LIMIT_DURATION_MS: 60000,
   },
 } as const;
