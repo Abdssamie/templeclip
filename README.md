@@ -20,7 +20,7 @@ TempleClip is a template-based video editor that lets you create reusable video 
 
 ## ⚠️ Project Status
 
-**This project is in maintenance mode.** It was built as a learning exercise and proof-of-concept. The codebase has significant technical debt and architectural issues. For production use, consider using Remotion directly with code-based templates.
+**This project is in maintenance mode.** It was built as a learning exercise and proof-of-concept. The codebase has some issues. For production use, consider using Remotion directly with code-based templates.
 
 ## ✨ Features
 
