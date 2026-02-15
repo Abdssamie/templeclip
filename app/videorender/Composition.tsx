@@ -3,8 +3,6 @@ import { TimelineComposition } from "../components/video-compositions/VideoPlaye
 
 export default function RenderComposition() {
   const inputProps = getInputProps();
-  console.log("[Composition] Input props:", inputProps);
-  console.log("[Composition] variableValues:", inputProps.variableValues);
 
   return (
     <Composition

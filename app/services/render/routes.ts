@@ -40,11 +40,6 @@ export function setupRoutes(app: express.Express) {
       return res.status(400).json({ error: "Invalid request data", details: validation.error.issues });
     }
 
-    console.log(
-      "[Render Service] Received request with variableValues:",
-      JSON.stringify(validation.data.variableValues, null, 2),
-    );
-
     try {
       const job = await renderQueue.add("render-video", validation.data, { jobId: crypto.randomUUID() });
       if (!job.id) {

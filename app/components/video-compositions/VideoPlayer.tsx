@@ -126,8 +126,6 @@ export function TimelineComposition({
   scenes = [],
   videoDimensions = { width: 1920, height: 1080 },
 }: TimelineCompositionProps) {
-  console.log(`[VideoPlayer] TimelineComposition received variableValues:`, JSON.stringify(variableValues, null, 2));
-
   // Resolve pixels per second based on rendering mode
   const resolvedPixelsPerSecond = typeof getPixelsPerSecond === "function" ? getPixelsPerSecond() : getPixelsPerSecond;
   // Get all transitions from timelineData
@@ -140,14 +138,8 @@ export function TimelineComposition({
 
   // Helper to resolve variables - supports both variableName field and {{ varName }} syntax in content
   const resolveVariable = (value: string | null, variableName?: string | null) => {
-    console.log(
-      `[VideoPlayer] resolveVariable called with value="${value}", variableName="${variableName}", variableValues=`,
-      variableValues,
-    );
-
     // First check if variableName field is set
     if (variableName && variableValues && variableValues[variableName]) {
-      console.log(`[VideoPlayer] Resolved via variableName field: ${variableName} -> ${variableValues[variableName]}`);
       return variableValues[variableName];
     }
 
@@ -155,9 +147,7 @@ export function TimelineComposition({
     if (value && variableValues) {
       // Replace all {{ variableName }} patterns with their values
       const resolved = value.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, varName) => {
-        const replacement = variableValues[varName] || match;
-        console.log(`[VideoPlayer] Resolved template: ${match} -> ${replacement}`);
-        return replacement; // Keep original if no value set
+        return variableValues[varName] || match; // Keep original if no value set
       });
       return resolved;
     }
