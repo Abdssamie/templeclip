@@ -157,6 +157,7 @@ const ProjectCard = ({
         {/* Actions: always visible on mobile, show on hover for desktop */}
         <div className="absolute bottom-0.5 right-0.5 transition-opacity duration-300 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex gap-0.5">
           <button
+            type="button"
             className="p-1.5 text-muted-foreground hover:text-foreground transition-colors duration-200"
             onClick={(e) => {
               e.stopPropagation();
@@ -166,6 +167,7 @@ const ProjectCard = ({
             <Code className="h-4 w-4" />
           </button>
           <button
+            type="button"
             className="p-1.5 text-muted-foreground hover:text-foreground transition-colors duration-200"
             onClick={(e) => {
               e.stopPropagation();
