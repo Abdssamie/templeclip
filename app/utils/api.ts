@@ -9,11 +9,15 @@ const safeEnv = (key: string, fallback?: string): string | undefined => {
 };
 
 export const getApiBaseUrl = (fastapi: boolean = false, betterauth: boolean = false): string => {
-  const nodeEnv = safeEnv("NODE_ENV", "development");
-  const isProduction = nodeEnv === "production";
-
-  // In browser, use window.location.origin for production
+  // Check if we're in browser
   const isBrowser = typeof window !== "undefined";
+
+  // In browser, detect production by checking if we're NOT on localhost
+  const isProduction = isBrowser
+    ? !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1")
+    : safeEnv("NODE_ENV", "development") === "production";
+
+  // In browser production, use current origin
   const prodDomain =
     isBrowser && isProduction
       ? window.location.origin
