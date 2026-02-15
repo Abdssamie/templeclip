@@ -612,7 +612,10 @@ export default function Projects() {
             <div className="w-full max-w-xl max-h-[85vh] rounded-md border border-border bg-background shadow-xl flex flex-col">
               <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between shrink-0">
                 <span className="text-sm font-medium">API Render Info</span>
-                <button type="button" onClick={() => setApiModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <button
+                  type="button"
+                  onClick={() => setApiModalOpen(false)}
+                  className="text-muted-foreground hover:text-foreground">
                   ×
                 </button>
               </div>
